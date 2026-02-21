@@ -256,16 +256,16 @@ def init_database():
         if cur.fetchone()['cnt'] == 0:
             cur.execute("""
             INSERT INTO achievements (code, name, description, icon, reward_caps) VALUES
-            ('first_login', '🍺 Первый глоток', 'Первый вход в систему', '🍺', 10),
-            ('first_referral', '👥 Первый реферал', 'Привел первого друга', '👥', 50),
-            ('ai_chat_10', '🤖 Болтун', '10 сообщений с ИИ', '🤖', 20),
-            ('university_graduate', '🎓 Выпускник', 'Завершил все уроки', '🎓', 100),
-            ('balance_1000', '💰 Тысячник', 'Накопил 1000 крышек', '💰', 0),
+            ('first_beer', '🍺 Первая кружка', 'Зарегистрироваться в системе', '🍺', 50),
+            ('bartender', '🍻 Начинающий бармен', 'Пригласить первого реферала', '🍻', 100),
+            ('master_brewer', '👨‍🍳 Мастер-пивовар', 'Пригласить 5 рефералов', '👨‍🍳', 200),
+            ('university_grad', '🎓 Выпускник университета', 'Пройти все уроки', '🎓', 150),
+            ('quiz_master', '🧠 Знаток пива', 'Сдать все экзамены на отлично', '🧠', 100),
+            ('social_butterfly', '🦋 Душа компании', 'Пригласить 10 рефералов', '🦋', 300),
+            ('chat_master', '💬 Болтун', 'Отправить 50 сообщений Михалычу', '💬', 75),
+            ('early_bird', '🌅 Ранняя пташка', 'Войти в приложение в 6 утра', '🌅', 25),
             ('sos_helper', '🆘 Спасатель', 'Использовал SOS систему', '🆘', 30),
-            ('application_sender', '📋 Заявитель', 'Отправил заявку на подключение', '📋', 25),
-            ('referral_master', '🌟 Мастер рефералов', '10+ рефералов', '🌟', 200),
-            ('ai_addict', '🧠 ИИ-зависимый', '100+ запросов к ИИ', '🧠', 150),
-            ('craft_veteran', '🍻 Ветеран CRAFT', '30+ дней в системе', '🍻', 500)
+            ('application_sender', '📋 Заявитель', 'Отправил заявку на подключение', '📋', 25)
             """)
         
         cur.execute("SELECT COUNT(*) as cnt FROM offers")
@@ -282,14 +282,18 @@ def init_database():
         if cur.fetchone()['cnt'] == 0:
             cur.execute("""
             INSERT INTO university_lessons (title, content, exam_questions, reward_caps, order_index) VALUES
-            ('Основы P2P процессинга', 
-             'P2P (peer-to-peer) процессинг - это система переводов между физическими лицами.',
-             '[{"question": "Что означает P2P?", "options": ["Peer-to-Peer", "Pay-to-Pay", "Point-to-Point"], "correct": 0}]',
+            ('Основы крафтового пива', 
+             'Крафтовое пиво — это пиво, произведённое небольшими независимыми пивоварнями. Основные ингредиенты пива: вода, солод, хмель и дрожжи. Хмель придаёт пиву характерную горечь и аромат. Солод отвечает за цвет и сладость. Дрожжи осуществляют брожение, превращая сахар в алкоголь и углекислый газ. Существует два основных типа брожения: верховое (эли) и низовое (лагеры). Эли бродят при температуре 15-24°C и имеют более сложный вкус. Лагеры бродят при 7-13°C и отличаются чистым, мягким вкусом.',
+             '[{"question": "Сколько основных ингредиентов в пиве?", "options": ["2", "4", "6"], "correct": 1}, {"question": "Что придаёт пиву горечь?", "options": ["Солод", "Хмель", "Дрожжи"], "correct": 1}, {"question": "При какой температуре бродят эли?", "options": ["7-13°C", "15-24°C", "25-35°C"], "correct": 1}]',
              30, 1),
-            ('Работа с банковскими блокировками',
-             'Блокировки по 115-ФЗ и 161-ФЗ - основные причины заморозки счетов.',
-             '[{"question": "115-ФЗ касается:", "options": ["Налогов", "ПОД/ФТ", "Трудового права"], "correct": 1}]',
-             40, 2)
+            ('Культура пивоварения', 
+             'История пивоварения насчитывает более 7000 лет. Первое пиво было сварено в Древнем Египте и Месопотамии. В Средние века пивоварение стало привилегией монастырей. Немецкий закон о чистоте пива (Reinheitsgebot) 1516 года — старейший действующий пищевой закон. Он разрешал использовать только воду, ячмень и хмель. Чехия — мировой лидер по потреблению пива на душу населения. Бельгия славится своими траппистскими элями, которые варят монахи.',
+             '[{"question": "В какой стране появилось первое пиво?", "options": ["Египет", "Германия", "Чехия"], "correct": 0}, {"question": "Как называется немецкий закон о чистоте пива?", "options": ["Bierfest", "Reinheitsgebot", "Oktoberfest"], "correct": 1}]',
+             40, 2),
+            ('Стили и сорта пива', 
+             'IPA (India Pale Ale) — один из самых популярных крафтовых стилей, характеризуется выраженной хмелевой горечью и ароматом цитрусовых. Стаут — тёмное пиво с нотами кофе и шоколада, родом из Ирландии. Пшеничное пиво (Weizen) — немецкий стиль с банановыми и гвоздичными нотами. Sour — кислое пиво, набирающее популярность. Porter — предшественник стаута, мягче и легче. Pilsner — самый распространённый стиль в мире, родом из чешского города Пльзень.',
+             '[{"question": "Откуда родом стиль Pilsner?", "options": ["Германия", "Чехия", "Бельгия"], "correct": 1}, {"question": "Какой стиль характеризуется нотами кофе и шоколада?", "options": ["IPA", "Pilsner", "Стаут"], "correct": 2}]',
+             50, 3)
             """)
         
         # Insert system admin user
@@ -566,7 +570,7 @@ MAIN_HTML = r"""<!DOCTYPE html>
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<meta name="build" content="20260221-1025">
+<meta name="build" content="20260221-1100">
 <title>🍺 CRAFT V2.0</title>
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 <style>
@@ -706,6 +710,29 @@ select.form-input{appearance:none;-webkit-appearance:none}
 .lesson-num{font-size:12px;color:#C9A84C;margin-bottom:4px}
 .lesson-title{font-size:15px;font-weight:600;color:#FFF8E7}
 .lesson-reward{font-size:12px;color:#D4871C;margin-top:4px}
+/* Fix scroll in sections */
+.content{height:calc(100vh - 70px);overflow-y:auto;-webkit-overflow-scrolling:touch}
+.overlay-bg{display:flex;flex-direction:column;height:100vh;overflow:hidden}
+/* Header split layout */
+.header-info{display:flex;justify-content:space-between;align-items:center;padding:0 8px}
+.user-info-left{text-align:left}
+.balance-right{text-align:right}
+.balance-amount{font-size:22px;font-weight:700;color:#F4C430;text-shadow:0 0 10px rgba(244,196,48,.4)}
+.balance-label{font-size:11px;color:#C9A84C}
+/* Achievement card unlocked/locked */
+.achievement-locked{opacity:.4;filter:grayscale(.6)}
+.achievement-unlocked{border-color:rgba(244,196,48,.5)!important}
+/* Referral stats */
+.ref-recent{padding:8px 0;border-bottom:1px solid rgba(212,135,28,.1)}
+.ref-recent-name{font-size:13px;color:#FFF8E7}
+.ref-recent-date{font-size:11px;color:#C9A84C}
+/* Lesson content */
+.lesson-content{padding:16px;font-size:14px;color:#C9A84C;line-height:1.7}
+.quiz-option{padding:12px;background:rgba(212,135,28,.08);border:1.5px solid rgba(212,135,28,.25);border-radius:10px;margin-bottom:8px;cursor:pointer;color:#FFF8E7;font-size:14px;transition:all .2s}
+.quiz-option:active{transform:scale(.97)}
+.quiz-option.correct{background:rgba(46,125,50,.3);border-color:rgba(46,125,50,.5)}
+.quiz-option.wrong{background:rgba(198,40,40,.3);border-color:rgba(198,40,40,.5)}
+.quiz-question{font-size:15px;font-weight:600;color:#F4C430;margin:16px 0 10px}
 </style>
 </head>
 <body>
@@ -746,12 +773,18 @@ select.form-input{appearance:none;-webkit-appearance:none}
 
 <!-- ===== MAIN SCREEN ===== -->
 <div class="screen" id="screenMain">
-  <div style="background:linear-gradient(135deg,#FFD700,#FFA500);color:#1A1209;text-align:center;padding:12px 16px;font-weight:bold;font-size:14px;letter-spacing:0.5px;box-shadow:0 2px 10px rgba(255,215,0,0.4)">
-    🏦 СТРАХОВОЙ ДЕПОЗИТ 500$ &nbsp;|&nbsp; 💼 РАБОЧИЙ ДЕПОЗИТ ОТ 300$
-  </div>
   <div class="header">
-    <div class="uid" id="userUID">#0000</div>
-    <div class="balance">Баланс: <span id="userBalance">0</span> крышек 🍺</div>
+    <div class="header-info">
+      <div class="user-info-left">
+        <div class="uid" id="userUID">#0000</div>
+        <div style="font-size:12px;color:#C9A84C" id="userUsername">@username</div>
+        <div style="font-size:11px;color:#8B7355" id="userNickname"></div>
+      </div>
+      <div class="balance-right">
+        <div class="balance-amount"><span id="userBalance">0</span> 🍺</div>
+        <div class="balance-label">крышек</div>
+      </div>
+    </div>
   </div>
   <div class="main-grid fade-in">
     <div class="main-block" onclick="showScreen('cabinet')">
@@ -1133,6 +1166,8 @@ function checkCaptcha(val, btn) {
 function enterApp() {
   document.getElementById('userUID').textContent = '#' + (APP.uid || '0000');
   document.getElementById('userBalance').textContent = APP.balance || 0;
+  document.getElementById('userUsername').textContent = APP.username ? '@'+APP.username : '';
+  document.getElementById('userNickname').textContent = APP.firstName || '';
   document.getElementById('screenMain').classList.add('active');
   APP.ready = true;
 }
@@ -1370,15 +1405,17 @@ function addChatMsg(text, type) {
 }
 
 /* ============ UNIVERSITY ============ */
+let universityLessons = [];
 async function loadUniversity() {
   const el = document.getElementById('universityContent');
   el.innerHTML = '<div class="loader"></div>';
   try {
     const r = await api('/api/university/lessons', null, 'GET');
     if (r.success && r.lessons) {
-      let html = '<div class="card" style="margin-bottom:16px"><div class="card-title">🏫 Университет CRAFT</div><div class="card-text">Изучайте уроки и зарабатывайте крышки</div></div>';
+      universityLessons = r.lessons;
+      let html = '<div class="card" style="margin-bottom:16px"><div class="card-title">🏫 Университет CRAFT</div><div class="card-text">Изучайте уроки, сдавайте экзамены и зарабатывайте крышки!</div></div>';
       r.lessons.forEach((l, i) => {
-        html += `<div class="lesson-card">
+        html += `<div class="lesson-card" onclick="openLesson(${i})">
           <div class="lesson-num">Урок ${l.order_index || i+1}</div>
           <div class="lesson-title">${l.title}</div>
           <div class="lesson-reward">Награда: ${l.reward_caps} 🍺</div>
@@ -1390,47 +1427,102 @@ async function loadUniversity() {
     }
   } catch(e) { el.innerHTML = '<div class="card"><div class="card-text">Ошибка загрузки</div></div>'; }
 }
+function openLesson(idx) {
+  const l = universityLessons[idx];
+  if (!l) return;
+  const el = document.getElementById('universityContent');
+  let quiz = [];
+  try { quiz = JSON.parse(l.exam_questions || '[]'); } catch(e) {}
+  let html = `<div class="card"><button class="back-btn" onclick="loadUniversity()" style="margin-bottom:12px">← Назад</button>
+    <div class="card-title">📖 ${l.title}</div>
+    <div class="lesson-content">${l.content}</div></div>`;
+  if (quiz.length > 0) {
+    html += '<div class="card"><div class="card-title">📝 Экзамен</div>';
+    quiz.forEach((q, qi) => {
+      html += '<div class="quiz-question">' + (qi+1) + '. ' + q.question + '</div>';
+      q.options.forEach((opt, oi) => {
+        html += '<div class="quiz-option" id="q'+qi+'o'+oi+'" onclick="checkQuiz('+qi+','+oi+','+q.correct+','+l.id+')">' + opt + '</div>';
+      });
+    });
+    html += '</div>';
+  }
+  el.innerHTML = html;
+}
+function checkQuiz(qi, oi, correct, lessonId) {
+  const opts = document.querySelectorAll('[id^="q'+qi+'o"]');
+  opts.forEach((o, i) => {
+    o.style.pointerEvents = 'none';
+    if (i === correct) o.classList.add('correct');
+    else if (i === oi) o.classList.add('wrong');
+  });
+  if (oi === correct) toast('✅ Правильно!');
+  else toast('❌ Неверно!');
+}
 
 /* ============ REFERRAL ============ */
 async function loadReferral() {
   const el = document.getElementById('referralContent');
-  if (APP.profile) {
-    const p = APP.profile;
+  el.innerHTML = '<div class="loader"></div>';
+  try {
+    const r = await api('/api/referral/stats?telegram_id=' + APP.tgId, null, 'GET');
+    if (r.success) {
+      const s = r.stats;
+      el.innerHTML = `
+        <div class="card">
+          <div class="card-title">🤝 Реферальная программа</div>
+          <div class="card-text" style="margin-bottom:12px">Приглашайте друзей — получайте крышки!</div>
+          <div class="stat-row"><span class="stat-label">👥 Рефералов 1-й уровень</span><span class="stat-val">${s.level1_count} чел</span></div>
+          <div class="stat-row"><span class="stat-label">👥 Рефералов 2-й уровень</span><span class="stat-val">${s.level2_count} чел</span></div>
+          <div class="stat-row"><span class="stat-label">💰 Всего заработано</span><span class="stat-val">${s.total_earned} 🍺</span></div>
+          <div class="stat-row"><span class="stat-label">Уровень 1</span><span class="stat-val">5% + 30 🍺</span></div>
+          <div class="stat-row"><span class="stat-label">Уровень 2</span><span class="stat-val">2% + 15 🍺</span></div>
+        </div>
+        ${s.recent && s.recent.length > 0 ? '<div class="card"><div class="card-title">🕐 Последние рефералы</div>' + s.recent.map(r => '<div class="ref-recent"><span class="ref-recent-name">' + r.name + '</span> <span class="ref-recent-date">' + r.date + '</span></div>').join('') + '</div>' : ''}
+        <div class="card">
+          <div class="card-title">🔗 Ваша ссылка</div>
+          <div style="padding:12px;background:rgba(26,18,9,.8);border-radius:8px;margin-top:8px;font-size:12px;color:#FFF8E7;word-break:break-all;text-align:center">
+            https://t.me/CraftV2Bot?start=ref_${APP.uid || '0000'}
+          </div>
+          <button class="btn btn-primary" style="margin-top:10px;font-size:13px;padding:10px" onclick="copyRefLink('https://t.me/CraftV2Bot?start=ref_${APP.uid || '0000'}')">📋 Копировать ссылку</button>
+        </div>`;
+    } else { throw new Error(); }
+  } catch(e) {
+    if (!APP.profile) { await loadCabinet(); }
+    const p = APP.profile || {};
+    const refs = p.referrals || {};
+    const l1 = refs.level_1 || {count:0,caps_earned:0};
+    const l2 = refs.level_2 || {count:0,caps_earned:0};
     el.innerHTML = `
       <div class="card">
         <div class="card-title">🤝 Реферальная программа</div>
-        <div class="card-text" style="margin-bottom:12px">Приглашайте друзей — получайте крышки!</div>
-        <div class="stat-row"><span class="stat-label">Уровень 1</span><span class="stat-val">5% комиссии + 30 🍺</span></div>
-        <div class="stat-row"><span class="stat-label">Уровень 2</span><span class="stat-val">2% комиссии + 15 🍺</span></div>
+        <div class="stat-row"><span class="stat-label">👥 1-й уровень</span><span class="stat-val">${l1.count} чел / ${l1.caps_earned} 🍺</span></div>
+        <div class="stat-row"><span class="stat-label">👥 2-й уровень</span><span class="stat-val">${l2.count} чел / ${l2.caps_earned} 🍺</span></div>
       </div>
       <div class="card">
         <div class="card-title">🔗 Ваша ссылка</div>
-        <div style="padding:12px;background:rgba(26,18,9,.8);border-radius:8px;margin-top:8px;font-size:12px;color:#FFF8E7;word-break:break-all;text-align:center" id="refLinkText">
-          https://t.me/CraftV2Bot?start=ref_${p.system_uid}
+        <div style="padding:12px;background:rgba(26,18,9,.8);border-radius:8px;margin-top:8px;font-size:12px;color:#FFF8E7;word-break:break-all;text-align:center">
+          https://t.me/CraftV2Bot?start=ref_${p.system_uid || APP.uid || '0000'}
         </div>
-        <button class="btn btn-primary" style="margin-top:10px;font-size:13px;padding:10px" onclick="copyRefLink('https://t.me/CraftV2Bot?start=ref_${p.system_uid}')">📋 Копировать ссылку</button>
+        <button class="btn btn-primary" style="margin-top:10px;font-size:13px;padding:10px" onclick="copyRefLink('https://t.me/CraftV2Bot?start=ref_${p.system_uid || APP.uid || '0000'}')">📋 Копировать ссылку</button>
       </div>`;
-  } else {
-    el.innerHTML = '<div class="loader"></div>';
-    await loadCabinet(); // load profile first
-    loadReferral();
   }
 }
 
 /* ============ ACHIEVEMENTS ============ */
 async function loadAchievements() {
   const el = document.getElementById('achievementsContent');
-  if (APP.profile && APP.profile.achievements) {
-    const achs = APP.profile.achievements;
-    if (achs.length > 0) {
-      el.innerHTML = achs.map(a => `<div class="card"><div style="display:flex;align-items:center;gap:12px"><div style="font-size:32px">${a.icon}</div><div><div style="font-weight:600;color:#FFF8E7">${a.name}</div><div style="font-size:12px;color:#C9A84C">+${a.reward_caps} 🍺</div></div></div></div>`).join('');
-    } else {
-      el.innerHTML = '<div class="card"><div class="card-title">🏆 Достижения</div><div class="card-text">Выполняйте задания, чтобы получить награды!</div></div>';
-    }
-  } else {
-    el.innerHTML = '<div class="loader"></div>';
-    await loadCabinet();
-    loadAchievements();
+  el.innerHTML = '<div class="loader"></div>';
+  try {
+    const r = await api('/api/achievements/all?telegram_id=' + APP.tgId, null, 'GET');
+    if (r.success) {
+      const all = r.achievements;
+      el.innerHTML = '<div class="card" style="margin-bottom:12px"><div class="card-title">🏆 Достижения</div><div class="card-text">Получено: ' + all.filter(a=>a.earned).length + '/' + all.length + '</div></div>' +
+        all.map(a => `<div class="card ${a.earned ? 'achievement-unlocked' : 'achievement-locked'}"><div style="display:flex;align-items:center;gap:12px"><div style="font-size:32px">${a.icon}</div><div><div style="font-weight:600;color:#FFF8E7">${a.name}</div><div style="font-size:12px;color:#C9A84C">${a.description}</div><div style="font-size:11px;color:#D4871C;margin-top:2px">+${a.reward_caps} 🍺 ${a.earned ? '✅' : '🔒'}</div></div></div></div>`).join('');
+    } else { throw new Error(); }
+  } catch(e) {
+    if (!APP.profile) await loadCabinet();
+    const achs = (APP.profile && APP.profile.achievements) || [];
+    el.innerHTML = achs.length > 0 ? achs.map(a => `<div class="card achievement-unlocked"><div style="display:flex;align-items:center;gap:12px"><div style="font-size:32px">${a.icon}</div><div><div style="font-weight:600;color:#FFF8E7">${a.name}</div><div style="font-size:12px;color:#C9A84C">+${a.reward_caps} 🍺 ✅</div></div></div></div>`).join('') : '<div class="card"><div class="card-text">Выполняйте задания для получения наград!</div></div>';
   }
 }
 
@@ -1726,6 +1818,63 @@ def api_user_profile():
         }})
     except Exception as e:
         return jsonify({"success": False, "error": "Failed to load profile"}), 500
+
+@app.route('/api/referral/stats', methods=['GET'])
+def api_referral_stats():
+    try:
+        telegram_id = request.args.get('telegram_id', '')
+        if not telegram_id:
+            return jsonify({"success": False, "error": "Telegram ID required"}), 400
+        user = get_user(telegram_id)
+        if not user:
+            return jsonify({"success": False, "error": "User not found"}), 404
+        
+        conn = get_db()
+        cur = conn.cursor()
+        
+        cur.execute("SELECT COUNT(*) as cnt FROM referrals WHERE referrer_id = %s AND level = 1", (user['id'],))
+        l1 = cur.fetchone()['cnt']
+        cur.execute("SELECT COUNT(*) as cnt FROM referrals WHERE referrer_id = %s AND level = 2", (user['id'],))
+        l2 = cur.fetchone()['cnt']
+        cur.execute("SELECT COALESCE(SUM(caps_earned), 0) as total FROM referrals WHERE referrer_id = %s", (user['id'],))
+        total = cur.fetchone()['total']
+        
+        cur.execute("""
+            SELECT u.first_name, u.username, r.created_at
+            FROM referrals r JOIN users u ON r.referred_id = u.id
+            WHERE r.referrer_id = %s ORDER BY r.created_at DESC LIMIT 5
+        """, (user['id'],))
+        recent = [{"name": (r['first_name'] or '') + (' @'+r['username'] if r['username'] else ''), "date": r['created_at'].strftime('%d.%m.%Y') if r['created_at'] else ''} for r in cur.fetchall()]
+        
+        conn.close()
+        return jsonify({"success": True, "stats": {"level1_count": l1, "level2_count": l2, "total_earned": total, "recent": recent}})
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+@app.route('/api/achievements/all', methods=['GET'])
+def api_achievements_all():
+    try:
+        telegram_id = request.args.get('telegram_id', '')
+        if not telegram_id:
+            return jsonify({"success": False, "error": "Telegram ID required"}), 400
+        user = get_user(telegram_id)
+        if not user:
+            return jsonify({"success": False, "error": "User not found"}), 404
+        
+        conn = get_db()
+        cur = conn.cursor()
+        cur.execute("""
+            SELECT a.id, a.code, a.name, a.description, a.icon, a.reward_caps,
+                   CASE WHEN ua.id IS NOT NULL THEN TRUE ELSE FALSE END as earned
+            FROM achievements a
+            LEFT JOIN user_achievements ua ON a.id = ua.achievement_id AND ua.user_id = %s
+            WHERE a.is_active = TRUE ORDER BY a.id
+        """, (user['id'],))
+        achievements = [dict(r) for r in cur.fetchall()]
+        conn.close()
+        return jsonify({"success": True, "achievements": achievements})
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
 
 @app.route('/api/health', methods=['GET'])
 def api_health():
