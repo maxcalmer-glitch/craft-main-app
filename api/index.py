@@ -314,6 +314,15 @@ def init_database():
             created_at TIMESTAMPTZ DEFAULT NOW()
         );
         
+        CREATE TABLE IF NOT EXISTS admin_messages (
+            id SERIAL PRIMARY KEY,
+            user_telegram_id TEXT NOT NULL,
+            direction TEXT NOT NULL,
+            message TEXT NOT NULL,
+            admin_username TEXT,
+            created_at TIMESTAMPTZ DEFAULT NOW()
+        );
+        
         CREATE TABLE IF NOT EXISTS broadcast_history (
             id SERIAL PRIMARY KEY,
             message TEXT NOT NULL,
@@ -353,6 +362,12 @@ def init_database():
             created_at TIMESTAMPTZ DEFAULT NOW()
         );
         """)
+        
+        # Add user_level column if not exists
+        try:
+            cur.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS user_level TEXT DEFAULT 'basic'")
+        except Exception:
+            pass
         
         # Insert initial data if empty
         cur.execute("SELECT COUNT(*) as cnt FROM achievements")
@@ -524,10 +539,11 @@ def get_ai_response(user_id, message, telegram_id):
             else:
                 cur.execute("UPDATE user_ai_sessions SET is_blocked = FALSE, message_count = 0, block_expires_at = NULL WHERE user_id = %s", (user_id,))
         
-        # Check caps balance
-        cur.execute("SELECT caps_balance FROM users WHERE id = %s", (user_id,))
+        # Check caps balance and VIP status
+        cur.execute("SELECT caps_balance, user_level FROM users WHERE id = %s", (user_id,))
         user = cur.fetchone()
-        if not user or user['caps_balance'] < config.CAPS_PER_AI_REQUEST:
+        is_vip = user and user.get('user_level') == 'vip'
+        if not user or (not is_vip and user['caps_balance'] < config.CAPS_PER_AI_REQUEST):
             conn.close()
             return {"success": False, "error": f"Недостаточно крышек! Нужно {config.CAPS_PER_AI_REQUEST} 🍺"}
         
@@ -611,12 +627,14 @@ def get_ai_response(user_id, message, telegram_id):
         cur.execute("""
             INSERT INTO ai_conversations (user_id, session_id, message, response, caps_spent, tokens_used, cost_usd)
             VALUES (%s, %s, %s, %s, %s, %s, %s)
-        """, (user_id, session['session_id'], message, response_text, config.CAPS_PER_AI_REQUEST, tokens_used, cost_usd))
+        """, (user_id, session['session_id'], message, response_text, caps_cost, tokens_used, cost_usd))
         
+        # VIP users don't spend caps
+        caps_cost = 0 if is_vip else config.CAPS_PER_AI_REQUEST
         cur.execute("""
             UPDATE users SET caps_balance = caps_balance - %s, total_spent_caps = total_spent_caps + %s, ai_requests_count = ai_requests_count + 1
             WHERE id = %s
-        """, (config.CAPS_PER_AI_REQUEST, config.CAPS_PER_AI_REQUEST, user_id))
+        """, (caps_cost, caps_cost, user_id))
         
         cur.execute("""
             UPDATE user_ai_sessions SET message_count = message_count + 1, last_activity = NOW(),
@@ -647,7 +665,7 @@ def get_ai_response(user_id, message, telegram_id):
         
         logger.info(f"AI response for user {user_id}: tokens_in={tokens_in}, tokens_out={tokens_out}, cost=${cost_usd:.6f}")
         
-        return {"success": True, "response": response_text, "caps_spent": config.CAPS_PER_AI_REQUEST, "tokens_used": tokens_used, "cost_usd": cost_usd}
+        return {"success": True, "response": response_text, "caps_spent": caps_cost, "tokens_used": tokens_used, "cost_usd": cost_usd}
     except Exception as e:
         logger.error(f"AI response failed: {e}")
         return {"success": False, "error": "Временная проблема с ИИ помощником 🤖"}
@@ -1456,6 +1474,7 @@ async function loadCabinet() {
           <div style="text-align:center;margin-bottom:12px">
             <div style="font-size:48px;animation:iconPulse 2s ease-in-out infinite">🍺</div>
             <div style="font-size:20px;font-weight:700;color:#D4871C;margin-top:8px">#${p.system_uid}</div>
+            ${p.user_level === 'vip' ? '<div style="font-size:14px;font-weight:700;color:#FFD700;margin-top:4px;text-shadow:0 0 10px rgba(255,215,0,.5)">👑 VIP</div>' : ''}
             <div style="font-size:14px;color:#C9A84C">${p.first_name||''} ${p.last_name||''}</div>
             ${p.username ? '<div style="font-size:12px;color:#C9A84C">@'+p.username+'</div>' : ''}
           </div>
@@ -1492,7 +1511,29 @@ async function loadCabinet() {
 
 /* ============ CONNECTION / OFFERS ============ */
 async function loadConnection() {
-  /* Unified offer — static block, no separate cards */
+  const el = document.getElementById('connectionContent');
+  try {
+    const r = await api('/api/offers', null, 'GET');
+    if (r.success && r.offers && r.offers.length > 0) {
+      let offersHtml = '';
+      r.offers.forEach(o => {
+        const rateText = o.rate_from === o.rate_to ? o.rate_from + '%' : o.rate_from + '-' + o.rate_to + '%';
+        offersHtml += '<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid rgba(212,135,28,.15)">' +
+          '<span style="font-size:14px;color:#C9A84C">' + o.description + '</span>' +
+          '<span style="font-size:16px;font-weight:700;color:#FFF8E7">' + rateText + '</span></div>';
+      });
+      el.innerHTML = '<div class="card" style="border-color:rgba(212,175,55,.5);background:linear-gradient(135deg,rgba(42,30,18,.95),rgba(50,35,15,.95))">' +
+        '<div style="text-align:center;margin-bottom:16px"><div style="font-size:42px;animation:beerGlow 2s ease-in-out infinite">🍺</div>' +
+        '<div style="font-size:20px;font-weight:700;color:#D4871C;margin-top:8px">CRAFT ОФФЕР</div>' +
+        '<div style="font-size:13px;color:#C9A84C;margin-top:4px">Полный пакет подключения</div></div>' +
+        '<div style="background:rgba(26,18,9,.6);border-radius:10px;padding:14px;margin-bottom:12px">' + offersHtml +
+        '<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid rgba(212,135,28,.15)">' +
+        '<span style="font-size:14px;color:#C9A84C">🛡️ Страховой депозит</span><span style="font-size:16px;font-weight:700;color:#FFF8E7">500$</span></div>' +
+        '<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0">' +
+        '<span style="font-size:14px;color:#C9A84C">💼 Рабочий депозит</span><span style="font-size:16px;font-weight:700;color:#FFF8E7">от 300$</span></div></div>' +
+        '<button class="btn btn-primary" onclick="showScreen(\'appForm\')" style="animation:beerGlow 2s ease-in-out infinite">📋 Подать заявку</button></div>';
+    }
+  } catch(e) { console.error('Failed to load offers', e); }
 }
 
 /* ============ APPLICATION FORM (Step-by-step) ============ */
@@ -2057,7 +2098,8 @@ def api_user_profile():
             "last_name": user['last_name'], "username": user['username'],
             "caps_balance": user['caps_balance'], "total_earned_caps": user['total_earned_caps'],
             "total_spent_caps": user['total_spent_caps'], "ai_requests_count": user['ai_requests_count'],
-            "created_at": str(user['created_at']), "referrals": referrals_data, "achievements": achievements
+            "created_at": str(user['created_at']), "referrals": referrals_data, "achievements": achievements,
+            "user_level": user.get('user_level', 'basic')
         }})
     except Exception as e:
         return jsonify({"success": False, "error": "Failed to load profile"}), 500
@@ -2366,9 +2408,31 @@ def bot_webhook():
                 handle_bot_ref_command(chat_id, user_id)
             elif text == '/stats':
                 handle_bot_stats_command(chat_id, user_id)
-            else:
+            elif text.startswith('/'):
                 # Неизвестная команда
                 send_telegram_message(chat_id, "🤖 Доступные команды:\n/start - начать\n/ref - получить реферальную ссылку\n/stats - статистика рефералов")
+            else:
+                # Save user message to admin_messages for mini-chat
+                try:
+                    conn2 = get_db()
+                    cur2 = conn2.cursor()
+                    cur2.execute(
+                        "INSERT INTO admin_messages (user_telegram_id, direction, message) VALUES (%s, 'user_to_admin', %s)",
+                        (user_id, text[:2000])
+                    )
+                    conn2.commit()
+                    conn2.close()
+                except Exception as e:
+                    logger.error(f"Failed to save user message: {e}")
+                
+                # Open webapp button
+                keyboard = {
+                    'inline_keyboard': [[{
+                        'text': '🍺 Открыть CRAFT',
+                        'web_app': {'url': 'https://craft-main-app.vercel.app'}
+                    }]]
+                }
+                send_telegram_message(chat_id, "💬 Ваше сообщение получено! Администратор скоро ответит.\n\n🍺 Или откройте приложение:", keyboard)
         
         return jsonify({'ok': True})
         
