@@ -486,6 +486,15 @@ def create_user(telegram_id, first_name='', last_name='', username='', referrer_
             conn.close()
             return {"success": False, "error": "User already exists"}
         
+        # Check for pending referral from bot
+        bot_referrer_id = None
+        cur.execute("SELECT referrer_id FROM pending_referrals WHERE referred_user_id = %s AND processed = FALSE", (telegram_id,))
+        pending = cur.fetchone()
+        if pending:
+            bot_referrer_id = pending['referrer_id']
+            # Mark as processed
+            cur.execute("UPDATE pending_referrals SET processed = TRUE WHERE referred_user_id = %s", (telegram_id,))
+        
         # Generate next UID
         cur.execute("""
             SELECT system_uid FROM users 
@@ -501,17 +510,26 @@ def create_user(telegram_id, first_name='', last_name='', username='', referrer_
         
         system_uid = f"{next_uid_num:04d}"
         
+        # Determine referrer (bot referral takes priority)
         referrer_id = None
-        if referrer_uid:
+        if bot_referrer_id:
+            cur.execute("SELECT id, telegram_id, first_name, username FROM users WHERE telegram_id = %s", (bot_referrer_id,))
+            referrer = cur.fetchone()
+            if referrer:
+                referrer_id = referrer['id']
+        elif referrer_uid:
             cur.execute("SELECT id FROM users WHERE system_uid = %s", (referrer_uid,))
             referrer = cur.fetchone()
             if referrer:
                 referrer_id = referrer['id']
         
+        # Starting balance: 100 base + 50 for referral = 150
+        starting_balance = 150 if referrer_id else 100
+        
         cur.execute("""
             INSERT INTO users (telegram_id, system_uid, first_name, last_name, username, referrer_id, caps_balance)
             VALUES (%s, %s, %s, %s, %s, %s, %s) RETURNING id
-        """, (telegram_id, system_uid, first_name, last_name, username, referrer_id, 100))
+        """, (telegram_id, system_uid, first_name, last_name, username, referrer_id, starting_balance))
         
         user_id = cur.fetchone()['id']
         
@@ -521,14 +539,43 @@ def create_user(telegram_id, first_name='', last_name='', username='', referrer_
         
         # Process referral rewards
         if referrer_id:
+            # Level 1 referral: +30 caps for referrer
             cur.execute("INSERT INTO referrals (referrer_id, referred_id, level, commission_percent, caps_earned) VALUES (%s, %s, 1, 5.00, 30)", (referrer_id, user_id))
             cur.execute("UPDATE users SET caps_balance = caps_balance + 30, total_earned_caps = total_earned_caps + 30 WHERE id = %s", (referrer_id,))
             
+            # Level 2 referral: +15 caps for referrer's referrer
             cur.execute("SELECT referrer_id FROM users WHERE id = %s", (referrer_id,))
             l2 = cur.fetchone()
             if l2 and l2['referrer_id']:
                 cur.execute("INSERT INTO referrals (referrer_id, referred_id, level, commission_percent, caps_earned) VALUES (%s, %s, 2, 2.00, 15)", (l2['referrer_id'], user_id))
                 cur.execute("UPDATE users SET caps_balance = caps_balance + 15, total_earned_caps = total_earned_caps + 15 WHERE id = %s", (l2['referrer_id'],))
+            
+            # Send Telegram notifications
+            try:
+                # Notify referrer about successful referral
+                referrer_name = referrer['first_name'] or referrer.get('username', 'Пользователь')
+                new_user_name = first_name or username or 'Новый пользователь'
+                
+                send_telegram_message(
+                    referrer['telegram_id'],
+                    f"🎉 *Отлично! Ваш друг зарегистрировался!*\n\n"
+                    f"👤 **{new_user_name}** присоединился к CRAFT\n"
+                    f"💰 Вы получили **+30 крышек**\n"
+                    f"🍺 Продолжайте приглашать друзей!"
+                )
+                
+                # Notify new user about referral bonus
+                send_telegram_message(
+                    telegram_id,
+                    f"🍺 *Добро пожаловать в CRAFT!*\n\n"
+                    f"🎁 **+50 крышек** за переход по ссылке друга!\n"
+                    f"👤 Вас пригласил: **{referrer_name}**\n\n"
+                    f"💰 Ваш стартовый баланс: **{starting_balance} крышек**\n"
+                    f"🚀 Начинайте зарабатывать еще больше!"
+                )
+                
+            except Exception as e:
+                logger.error(f"Failed to send referral notifications: {e}")
         
         # Award first login achievement
         cur.execute("SELECT id, reward_caps FROM achievements WHERE code = 'first_login'")
@@ -541,7 +588,7 @@ def create_user(telegram_id, first_name='', last_name='', username='', referrer_
         conn.commit()
         conn.close()
         
-        return {"success": True, "user_id": user_id, "system_uid": system_uid, "caps_balance": 100}
+        return {"success": True, "user_id": user_id, "system_uid": system_uid, "caps_balance": starting_balance}
     except Exception as e:
         logger.error(f"User creation failed: {e}")
         return {"success": False, "error": str(e)}
@@ -1928,10 +1975,20 @@ def handle_bot_start_command(chat_id, user_id, text, username=None, first_name=N
     """Обработка команды /start от бота"""
     try:
         # Регистрация пользователя в БД если еще нет
-        user = get_or_create_user(user_id, username, first_name)
+        conn = get_db()
+        cur = conn.cursor()
+        cur.execute(
+            '''INSERT INTO users (telegram_id, username, first_name, caps_balance) 
+               VALUES (%s, %s, %s, 100) 
+               ON CONFLICT (telegram_id) DO NOTHING''',
+            (user_id, username, first_name)
+        )
+        conn.commit()
+        conn.close()
         
         # Проверка реферального параметра
-        referral_message = ""
+        is_referral = False
+        referrer_name = ""
         if 'ref_' in text:
             try:
                 referrer_id = text.split('ref_')[1].strip()
@@ -1952,7 +2009,18 @@ def handle_bot_start_command(chat_id, user_id, text, username=None, first_name=N
                         conn.commit()
                         conn.close()
                         
-                        referral_message = f"\n\n🎉 Отлично! Вас пригласил пользователь #{referrer['system_uid']}!\nВы оба получите бонусы после регистрации в приложении!"
+                        is_referral = True
+                        referrer_name = referrer.get('first_name') or referrer.get('username') or f"#{referrer['system_uid']}"
+                        
+                        # Notify referrer about new referral
+                        send_telegram_message(
+                            referrer_id,
+                            f"🎉 *У вас новый реферал!*\n\n"
+                            f"👤 **{first_name or username or 'Пользователь'}** перешел по вашей ссылке\n"
+                            f"⏳ Осталось только зарегистрироваться в приложении\n\n"
+                            f"💰 После регистрации вы получите **+30 крышек**!"
+                        )
+                        
             except Exception as e:
                 logger.error(f"Referral processing error: {e}")
         
@@ -1964,7 +2032,40 @@ def handle_bot_start_command(chat_id, user_id, text, username=None, first_name=N
             }]]
         }
         
-        welcome_text = f"🍺 Добро пожаловать в CRAFT!{referral_message}\n\nНажмите кнопку чтобы открыть приложение:"
+        # Разные приветствия для реферала и обычного пользователя
+        if is_referral:
+            welcome_text = (
+                f"🍺 *Добро пожаловать в CRAFT!*\n\n"
+                f"🎉 Отлично! Вас пригласил **{referrer_name}**\n\n"
+                f"💰 *Крафтовая платформа для заработка:*\n"
+                f"• Выполняйте задания и получайте крышки\n"
+                f"• Обменивайте крышки на реальные награды\n"
+                f"• Приглашайте друзей и зарабатывайте еще больше\n\n"
+                f"🎁 *Ваши бонусы:*\n"
+                f"• **+50 крышек** за переход по ссылке друга\n"
+                f"• **+30 крышек** за каждого приглашенного друга\n"
+                f"• **+15 крышек** за друзей ваших друзей\n\n"
+                f"📊 *Доступные команды:*\n"
+                f"/ref - получить свою реферальную ссылку\n"
+                f"/stats - статистика рефералов\n\n"
+                f"🚀 *Нажмите кнопку чтобы начать зарабатывать!*"
+            )
+        else:
+            welcome_text = (
+                f"🍺 *Добро пожаловать в CRAFT!*\n\n"
+                f"💰 *Крафтовая платформа для заработка:*\n"
+                f"• Выполняйте задания и получайте крышки\n"
+                f"• Приглашайте друзей и зарабатывайте еще больше\n"
+                f"• Обменивайте крышки на реальные награды\n\n"
+                f"🤝 *Реферальная программа:*\n"
+                f"• Вы: **+30 крышек** за каждого друга\n"
+                f"• Ваш друг: **+50 крышек** бонус за регистрацию\n"
+                f"• Друзья друзей: **+15 крышек** дополнительно\n\n"
+                f"📊 *Доступные команды:*\n"
+                f"/ref - получить реферальную ссылку\n"
+                f"/stats - ваша статистика рефералов\n\n"
+                f"🚀 *Нажмите кнопку чтобы открыть приложение!*"
+            )
         
         send_telegram_message(chat_id, welcome_text, keyboard)
         
@@ -1986,8 +2087,11 @@ def handle_bot_ref_command(chat_id, user_id):
             f"🔗 *Ваша реферальная ссылка:*\n\n"
             f"`{ref_link}`\n\n"
             f"💰 *Система наград:*\n"
-            f"• 1-й уровень: **30 крышек** за каждого друга\n"
-            f"• 2-й уровень: **15 крышек** за друзей ваших друзей\n\n"
+            f"• Вы: **+30 крышек** за каждого друга\n"
+            f"• Ваш друг: **+50 крышек** бонус за переход\n"
+            f"• Друзья друзей: **+15 крышек** дополнительно\n\n"
+            f"🎯 *Выгодно всем!*\n"
+            f"Ваши друзья получают стартовый бонус **+50 крышек**\n\n"
             f"🍺 Поделитесь ссылкой с друзьями и зарабатывайте!"
         )
         
