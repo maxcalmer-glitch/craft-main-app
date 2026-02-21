@@ -773,20 +773,30 @@ select.form-input{appearance:none;-webkit-appearance:none}
           <div style="font-size:13px;color:#C9A84C;margin-top:4px">Полный пакет подключения</div>
         </div>
         <div style="background:rgba(26,18,9,.6);border-radius:10px;padding:14px;margin-bottom:12px">
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid rgba(212,135,28,.15)">
+            <span style="font-size:14px;color:#C9A84C">📝 Чеки 1-10к</span>
+            <span style="font-size:16px;font-weight:700;color:#FFF8E7">12-14%</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid rgba(212,135,28,.15)">
+            <span style="font-size:14px;color:#C9A84C">📝 Чеки 10к+</span>
+            <span style="font-size:16px;font-weight:700;color:#FFF8E7">8-9%</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid rgba(212,135,28,.15)">
+            <span style="font-size:14px;color:#C9A84C">📱 Сим</span>
+            <span style="font-size:16px;font-weight:700;color:#FFF8E7">15%</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid rgba(212,135,28,.15)">
+            <span style="font-size:14px;color:#C9A84C">📲 QR/НСПК</span>
+            <span style="font-size:16px;font-weight:700;color:#FFF8E7">12-13%</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid rgba(212,135,28,.15)">
             <span style="font-size:14px;color:#C9A84C">🛡️ Страховой депозит</span>
-            <span style="font-size:18px;font-weight:700;color:#FFF8E7">$500</span>
+            <span style="font-size:16px;font-weight:700;color:#FFF8E7">500$</span>
           </div>
-          <div style="display:flex;justify-content:space-between;align-items:center">
-            <span style="font-size:14px;color:#C9A84C">💼 Рабочий капитал</span>
-            <span style="font-size:18px;font-weight:700;color:#FFF8E7">от $300</span>
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0">
+            <span style="font-size:14px;color:#C9A84C">💼 Рабочий депозит</span>
+            <span style="font-size:16px;font-weight:700;color:#FFF8E7">от 300$</span>
           </div>
-        </div>
-        <div style="font-size:12px;color:#C9A84C;line-height:1.6;margin-bottom:14px">
-          ✅ Полное обучение и поддержка 24/7<br>
-          ✅ Доступ к актуальным схемам<br>
-          ✅ Личный куратор<br>
-          ✅ Страховка от блокировок
         </div>
         <button class="btn btn-primary" onclick="showScreen('appForm')" style="animation:beerGlow 2s ease-in-out infinite">📋 Подать заявку</button>
       </div>
@@ -794,62 +804,25 @@ select.form-input{appearance:none;-webkit-appearance:none}
   </div>
 </div>
 
-<!-- ===== APPLICATION FORM ===== -->
+<!-- ===== APPLICATION FORM (Step-by-step) ===== -->
 <div class="overlay" id="screenAppForm">
   <div class="overlay-bg">
     <div class="sub-header">
-      <button class="back-btn" onclick="showScreen('connection')">←</button>
-      <div class="sub-title">📋 Заявка</div>
+      <button class="back-btn" onclick="appFormBack()">←</button>
+      <div class="sub-title">📋 Анкета <span id="appStepLabel">1/6</span></div>
     </div>
     <div class="content fade-in">
+      <!-- Progress bar -->
+      <div style="background:rgba(26,18,9,.8);border-radius:8px;height:6px;margin-bottom:20px;overflow:hidden">
+        <div id="appProgress" style="height:100%;background:linear-gradient(90deg,#D4871C,#C9A84C);border-radius:8px;transition:width .3s;width:16.6%"></div>
+      </div>
       <div class="card" style="border-color:rgba(212,135,28,.4)">
-        <div class="card-title">📋 Заявка на подключение</div>
-        <div class="card-text" style="margin-bottom:16px">Заполните анкету — мы свяжемся с вами</div>
+        <div class="card-title" id="appQuestionTitle">Вопрос 1 из 6</div>
+        <div id="appQuestionText" style="font-size:15px;color:#FFF8E7;margin:12px 0 16px;line-height:1.5"></div>
         <div class="form-group">
-          <label class="form-label">1. Имя / Nickname</label>
-          <input class="form-input" id="appName" placeholder="Как к вам обращаться">
+          <textarea class="form-textarea" id="appAnswer" placeholder="Ваш ответ..." style="min-height:80px"></textarea>
         </div>
-        <div class="form-group">
-          <label class="form-label">2. Telegram для связи</label>
-          <input class="form-input" id="appContact" placeholder="@username или номер телефона">
-        </div>
-        <div class="form-group">
-          <label class="form-label">3. Город проживания</label>
-          <input class="form-input" id="appCity" placeholder="Ваш город">
-        </div>
-        <div class="form-group">
-          <label class="form-label">4. Направление работы</label>
-          <select class="form-input" id="appCategory">
-            <option value="">Выберите направление...</option>
-            <option value="checks_1_10k">Чеки 1-10к</option>
-            <option value="checks_10k_plus">Чеки 10к+</option>
-            <option value="sim">Сим-карты</option>
-            <option value="qr_nspk">QR/НСПК</option>
-            <option value="drops">Дропы</option>
-            <option value="other">Другое</option>
-          </select>
-        </div>
-        <div class="form-group">
-          <label class="form-label">5. Опыт в сфере</label>
-          <select class="form-input" id="appExperience">
-            <option value="">Выберите...</option>
-            <option value="none">Без опыта</option>
-            <option value="less_1y">Менее 1 года</option>
-            <option value="1_3y">1-3 года</option>
-            <option value="3y_plus">3+ лет</option>
-          </select>
-        </div>
-        <div class="form-group">
-          <label class="form-label">6. Сумма для старта (USD)</label>
-          <select class="form-input" id="appBudget">
-            <option value="">Выберите бюджет...</option>
-            <option value="800_1500">$800 - $1,500</option>
-            <option value="1500_3000">$1,500 - $3,000</option>
-            <option value="3000_5000">$3,000 - $5,000</option>
-            <option value="5000_plus">$5,000+</option>
-          </select>
-        </div>
-        <button class="btn btn-primary" id="appSubmitBtn" onclick="submitApplication()">📨 Отправить заявку</button>
+        <button class="btn btn-primary" id="appNextBtn" onclick="appFormNext()">Далее →</button>
       </div>
     </div>
   </div>
@@ -1156,7 +1129,7 @@ function showScreen(name) {
     if (name === 'university') loadUniversity();
     if (name === 'referral') loadReferral();
     if (name === 'achievements') loadAchievements();
-    if (name === 'appForm') {} // static form
+    if (name === 'appForm') initAppForm();
   }
 }
 function updateBalance() {
@@ -1235,30 +1208,55 @@ async function loadConnection() {
   }
 }
 
-/* ============ APPLICATION FORM ============ */
+/* ============ APPLICATION FORM (Step-by-step) ============ */
+const APP_QUESTIONS = [
+  "Как давно в сфере процессинга?",
+  "Работаешь сейчас где-то? Если да, то где, по какому методу (Ферма/БТ/Залив и тд.)",
+  "Почему ищешь другую площадку, чем не нравится та, где стоишь сейчас? (Если нигде не работаешь - ответь \"Не работаю\")",
+  "Какой у тебя рабочий депозит?",
+  "Сколько реквизитов у тебя есть сейчас на руках, сколько сможешь включить в работу в первую неделю работы? (Можешь ответить максимально подробно, кол-во/Банки)",
+  "Почему мы должны взять тебя в свою команду?"
+];
+let appStep = 0;
+let appAnswers = [];
+
+function initAppForm() {
+  appStep = 0; appAnswers = [];
+  renderAppStep();
+}
+function renderAppStep() {
+  document.getElementById('appStepLabel').textContent = (appStep+1) + '/6';
+  document.getElementById('appProgress').style.width = ((appStep+1)/6*100) + '%';
+  document.getElementById('appQuestionTitle').textContent = 'Вопрос ' + (appStep+1) + ' из 6';
+  document.getElementById('appQuestionText').textContent = APP_QUESTIONS[appStep];
+  document.getElementById('appAnswer').value = appAnswers[appStep] || '';
+  document.getElementById('appAnswer').placeholder = 'Ваш ответ...';
+  const btn = document.getElementById('appNextBtn');
+  btn.textContent = appStep === 5 ? '📨 Отправить заявку' : 'Далее →';
+  btn.disabled = false;
+}
+function appFormBack() {
+  if (appStep > 0) { appStep--; renderAppStep(); }
+  else { showScreen('connection'); }
+}
+function appFormNext() {
+  const answer = document.getElementById('appAnswer').value.trim();
+  if (!answer) { toast('Напишите ответ на вопрос'); return; }
+  appAnswers[appStep] = answer;
+  if (appStep < 5) { appStep++; renderAppStep(); }
+  else { submitApplication(); }
+}
 async function submitApplication() {
-  const btn = document.getElementById('appSubmitBtn');
-  const name = document.getElementById('appName').value.trim();
-  const contact = document.getElementById('appContact').value.trim();
-  const city = document.getElementById('appCity').value.trim();
-  const category = document.getElementById('appCategory').value;
-  const experience = document.getElementById('appExperience').value;
-  const budget = document.getElementById('appBudget').value;
-  
-  if (!name || !contact || !city || !category || !experience || !budget) { toast('Заполните все 6 полей анкеты'); return; }
-  
+  const btn = document.getElementById('appNextBtn');
   btn.disabled = true; btn.textContent = '⏳ Отправка...';
+  const form_data = {};
+  APP_QUESTIONS.forEach((q, i) => { form_data['q'+(i+1)] = q; form_data['a'+(i+1)] = appAnswers[i]; });
   try {
-    const r = await api('/api/application/submit', {
-      telegram_id: APP.tgId,
-      form_data: { name, contact, city, category, experience, budget }
-    });
+    const r = await api('/api/application/submit', { telegram_id: APP.tgId, form_data });
     if (r.success) {
       toast('✅ Заявка отправлена!');
       setTimeout(() => showScreen('main'), 1500);
-    } else {
-      toast('❌ ' + (r.error || 'Ошибка'));
-    }
+    } else { toast('❌ ' + (r.error || 'Ошибка')); }
   } catch(e) { toast('❌ Ошибка соединения'); }
   btn.disabled = false; btn.textContent = '📨 Отправить заявку';
 }
