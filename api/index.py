@@ -558,118 +558,814 @@ def get_user(telegram_id):
 # MAIN HTML TEMPLATE
 # ===============================
 
-MAIN_HTML = """<!DOCTYPE html>
+MAIN_HTML = r"""<!DOCTYPE html>
 <html lang="ru">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>🍺 CRAFT V2.0</title>
-    <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body {
-            background: linear-gradient(135deg, #1A1209 0%, #2C1F0E 50%, #1A1209 100%);
-            color: #FFF8E7;
-            font-family: system-ui, sans-serif;
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-        }
-        .header {
-            background: rgba(42, 30, 18, 0.9);
-            padding: 20px 16px;
-            text-align: center;
-            border-bottom: 1px solid rgba(212, 135, 28, 0.2);
-        }
-        .uid { font-size: 18px; font-weight: 700; color: #D4871C; margin-bottom: 8px; }
-        .balance { font-size: 14px; color: #C9A84C; }
-        .main-grid {
-            flex: 1; display: grid; grid-template-columns: 1fr 1fr;
-            gap: 16px; padding: 24px 16px; max-width: 400px; margin: 0 auto; width: 100%;
-        }
-        .main-block {
-            background: rgba(42, 30, 18, 0.9);
-            border: 1px solid rgba(212, 135, 28, 0.2);
-            border-radius: 16px; padding: 24px 16px;
-            text-align: center; cursor: pointer;
-            transition: all 0.3s ease; min-height: 120px;
-            display: flex; flex-direction: column; justify-content: center;
-        }
-        .main-block:hover {
-            border-color: rgba(212, 135, 28, 0.6);
-            box-shadow: 0 0 20px rgba(212, 135, 28, 0.3);
-            transform: translateY(-2px);
-        }
-        .block-icon { font-size: 32px; margin-bottom: 8px; }
-        .block-title { font-size: 16px; font-weight: 600; color: #D4871C; }
-        .footer {
-            display: flex; justify-content: space-between; padding: 16px;
-            background: rgba(42, 30, 18, 0.9);
-            border-top: 1px solid rgba(212, 135, 28, 0.2);
-        }
-        .footer-btn {
-            padding: 8px 16px; background: rgba(212, 135, 28, 0.2);
-            border: 1px solid rgba(212, 135, 28, 0.4);
-            border-radius: 8px; color: #FFF8E7; text-decoration: none; font-size: 12px;
-        }
-        .sos-block { background: rgba(198, 40, 40, 0.2) !important; border-color: rgba(198, 40, 40, 0.4) !important; }
-        .sos-block:hover { border-color: rgba(198, 40, 40, 0.7) !important; box-shadow: 0 0 20px rgba(198, 40, 40, 0.3) !important; }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>🍺 CRAFT V2.0</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:linear-gradient(135deg,#1A1209 0%,#2C1F0E 50%,#1A1209 100%);color:#FFF8E7;font-family:system-ui,sans-serif;min-height:100vh;overflow-x:hidden}
+.screen{display:none;flex-direction:column;min-height:100vh;width:100%}
+.screen.active{display:flex}
+/* Header */
+.header{background:rgba(42,30,18,.9);padding:20px 16px;text-align:center;border-bottom:1px solid rgba(212,135,28,.2)}
+.uid{font-size:18px;font-weight:700;color:#D4871C;margin-bottom:8px}
+.balance{font-size:14px;color:#C9A84C}
+/* Grid */
+.main-grid{flex:1;display:grid;grid-template-columns:1fr 1fr;gap:16px;padding:24px 16px;max-width:400px;margin:0 auto;width:100%}
+.main-block{background:rgba(42,30,18,.9);border:1px solid rgba(212,135,28,.2);border-radius:16px;padding:24px 16px;text-align:center;cursor:pointer;transition:all .3s;min-height:120px;display:flex;flex-direction:column;justify-content:center;-webkit-tap-highlight-color:transparent}
+.main-block:active{transform:scale(.96)}
+.block-icon{font-size:36px;margin-bottom:8px;display:inline-block;animation:iconPulse 2s ease-in-out infinite}
+.block-title{font-size:15px;font-weight:600;color:#D4871C}
+.sos-block{background:rgba(198,40,40,.15)!important;border-color:rgba(198,40,40,.4)!important}
+.sos-block .block-icon{animation:sosPulse 1.5s ease-in-out infinite}
+/* Footer */
+.footer{display:flex;justify-content:space-between;padding:16px;background:rgba(42,30,18,.9);border-top:1px solid rgba(212,135,28,.2)}
+.footer-btn{padding:8px 16px;background:rgba(212,135,28,.2);border:1px solid rgba(212,135,28,.4);border-radius:8px;color:#FFF8E7;text-decoration:none;font-size:12px;cursor:pointer;transition:all .2s}
+.footer-btn:active{background:rgba(212,135,28,.4)}
+/* Animations */
+@keyframes iconPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.15)}}
+@keyframes sosPulse{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(1.2);opacity:.8}}
+@keyframes fadeIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+@keyframes spin{to{transform:rotate(360deg)}}
+.fade-in{animation:fadeIn .3s ease}
+/* Overlay screens */
+.overlay{position:fixed;top:0;left:0;width:100%;height:100%;z-index:100;display:none;flex-direction:column}
+.overlay.active{display:flex}
+.overlay-bg{background:linear-gradient(135deg,#1A1209 0%,#2C1F0E 50%,#1A1209 100%);min-height:100vh}
+/* Sub-header */
+.sub-header{background:rgba(42,30,18,.95);padding:16px;display:flex;align-items:center;gap:12px;border-bottom:1px solid rgba(212,135,28,.2)}
+.back-btn{width:36px;height:36px;border-radius:50%;border:1px solid rgba(212,135,28,.4);background:rgba(212,135,28,.1);color:#D4871C;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.sub-title{font-size:18px;font-weight:700;color:#D4871C}
+/* Content */
+.content{flex:1;padding:16px;overflow-y:auto;-webkit-overflow-scrolling:touch}
+/* Cards */
+.card{background:rgba(42,30,18,.9);border:1px solid rgba(212,135,28,.2);border-radius:12px;padding:16px;margin-bottom:12px}
+.card-title{font-size:15px;font-weight:600;color:#D4871C;margin-bottom:8px}
+.card-text{font-size:13px;color:#C9A84C;line-height:1.5}
+.card-value{font-size:20px;font-weight:700;color:#FFF8E7}
+/* Stat row */
+.stat-row{display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid rgba(212,135,28,.1)}
+.stat-label{font-size:13px;color:#C9A84C}
+.stat-val{font-size:13px;color:#FFF8E7;font-weight:600}
+/* Forms */
+.form-group{margin-bottom:14px}
+.form-label{display:block;font-size:13px;color:#C9A84C;margin-bottom:6px}
+.form-input,.form-textarea{width:100%;padding:12px;background:rgba(26,18,9,.8);border:1px solid rgba(212,135,28,.3);border-radius:10px;color:#FFF8E7;font-size:14px;outline:none;transition:border-color .2s}
+.form-input:focus,.form-textarea:focus{border-color:#D4871C}
+.form-textarea{min-height:100px;resize:vertical;font-family:inherit}
+select.form-input{appearance:none;-webkit-appearance:none}
+/* Buttons */
+.btn{width:100%;padding:14px;border-radius:12px;border:none;font-size:15px;font-weight:600;cursor:pointer;transition:all .2s}
+.btn-primary{background:linear-gradient(135deg,#D4871C,#C9A84C);color:#1A1209}
+.btn-danger{background:linear-gradient(135deg,#C62828,#E53935);color:#FFF}
+.btn:active{transform:scale(.97);opacity:.9}
+.btn:disabled{opacity:.5;pointer-events:none}
+/* Offer cards */
+.offer-card{background:rgba(42,30,18,.9);border:1px solid rgba(212,135,28,.2);border-radius:12px;padding:14px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center}
+.offer-name{font-size:14px;font-weight:600;color:#FFF8E7}
+.offer-rate{font-size:13px;color:#C9A84C}
+.offer-apply{padding:8px 16px;background:rgba(212,135,28,.2);border:1px solid rgba(212,135,28,.4);border-radius:8px;color:#D4871C;font-size:12px;font-weight:600;cursor:pointer}
+/* Menu items */
+.menu-item{display:flex;align-items:center;gap:14px;padding:14px;background:rgba(42,30,18,.9);border:1px solid rgba(212,135,28,.15);border-radius:12px;margin-bottom:10px;cursor:pointer;transition:all .2s}
+.menu-item:active{background:rgba(42,30,18,1);transform:scale(.98)}
+.menu-icon{font-size:24px;width:40px;text-align:center;animation:iconPulse 3s ease-in-out infinite}
+.menu-text{font-size:14px;font-weight:500;color:#FFF8E7}
+.menu-arrow{margin-left:auto;color:#C9A84C;font-size:14px}
+/* AI Chat */
+.chat-messages{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:10px}
+.chat-msg{max-width:85%;padding:10px 14px;border-radius:12px;font-size:13px;line-height:1.5;animation:fadeIn .3s}
+.chat-msg.user{align-self:flex-end;background:rgba(212,135,28,.25);border:1px solid rgba(212,135,28,.3);color:#FFF8E7}
+.chat-msg.bot{align-self:flex-start;background:rgba(42,30,18,.9);border:1px solid rgba(212,135,28,.15);color:#C9A84C}
+.chat-input-area{display:flex;gap:8px;padding:12px 16px;background:rgba(42,30,18,.95);border-top:1px solid rgba(212,135,28,.2)}
+.chat-input{flex:1;padding:10px 14px;background:rgba(26,18,9,.8);border:1px solid rgba(212,135,28,.3);border-radius:20px;color:#FFF8E7;font-size:14px;outline:none}
+.chat-send{width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg,#D4871C,#C9A84C);border:none;color:#1A1209;font-size:18px;cursor:pointer}
+/* Achievement badges */
+.badge{display:inline-flex;align-items:center;gap:4px;padding:4px 10px;background:rgba(212,135,28,.15);border:1px solid rgba(212,135,28,.2);border-radius:20px;font-size:12px;color:#C9A84C;margin:3px}
+/* Channel check overlay */
+.gate-overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:linear-gradient(135deg,#1A1209 0%,#2C1F0E 50%,#1A1209 100%);z-index:200;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;text-align:center}
+.gate-icon{font-size:64px;margin-bottom:20px;animation:iconPulse 2s ease-in-out infinite}
+.gate-title{font-size:22px;font-weight:700;color:#D4871C;margin-bottom:12px}
+.gate-text{font-size:14px;color:#C9A84C;margin-bottom:24px;line-height:1.6}
+.gate-btn{display:inline-block;padding:14px 32px;background:linear-gradient(135deg,#D4871C,#C9A84C);color:#1A1209;border-radius:12px;font-size:15px;font-weight:600;text-decoration:none;cursor:pointer;border:none;margin-bottom:12px}
+.gate-btn-outline{display:inline-block;padding:12px 28px;background:transparent;border:1px solid rgba(212,135,28,.4);color:#D4871C;border-radius:12px;font-size:14px;cursor:pointer;text-decoration:none}
+/* Captcha */
+.captcha-box{background:rgba(42,30,18,.9);border:1px solid rgba(212,135,28,.3);border-radius:16px;padding:24px;max-width:320px;width:100%}
+.captcha-question{font-size:18px;color:#FFF8E7;margin-bottom:16px;font-weight:600}
+.captcha-options{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.captcha-opt{padding:14px;background:rgba(212,135,28,.1);border:1px solid rgba(212,135,28,.3);border-radius:10px;color:#FFF8E7;font-size:16px;font-weight:600;cursor:pointer;text-align:center;transition:all .2s}
+.captcha-opt:active{background:rgba(212,135,28,.3);transform:scale(.95)}
+.captcha-opt.wrong{background:rgba(198,40,40,.3);border-color:rgba(198,40,40,.5)}
+.captcha-opt.correct{background:rgba(46,125,50,.3);border-color:rgba(46,125,50,.5)}
+/* Loader */
+.loader{width:32px;height:32px;border:3px solid rgba(212,135,28,.2);border-top-color:#D4871C;border-radius:50%;animation:spin .8s linear infinite;margin:20px auto}
+/* Toast */
+.toast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:rgba(42,30,18,.95);border:1px solid rgba(212,135,28,.4);padding:10px 20px;border-radius:10px;font-size:13px;color:#FFF8E7;z-index:300;animation:fadeIn .3s;pointer-events:none}
+/* University */
+.lesson-card{background:rgba(42,30,18,.9);border:1px solid rgba(212,135,28,.2);border-radius:12px;padding:16px;margin-bottom:10px;cursor:pointer;transition:all .2s}
+.lesson-card:active{transform:scale(.98)}
+.lesson-num{font-size:12px;color:#C9A84C;margin-bottom:4px}
+.lesson-title{font-size:15px;font-weight:600;color:#FFF8E7}
+.lesson-reward{font-size:12px;color:#D4871C;margin-top:4px}
+</style>
 </head>
 <body>
-    <div class="header">
-        <div class="uid" id="userUID">#0666</div>
-        <div class="balance">Баланс: <span id="userBalance">100</span> крышек 🍺</div>
+
+<!-- ===== GATE: Channel Check ===== -->
+<div class="gate-overlay" id="gateChannel" style="display:none">
+  <div class="gate-icon">📢</div>
+  <div class="gate-title">Подпишитесь на канал</div>
+  <div class="gate-text">Для входа в CRAFT V2.0 необходимо<br>подписаться на наш канал</div>
+  <a class="gate-btn" id="channelLink" href="https://t.me/+MepEj5pb6kU3OGI1" onclick="openChannelLink()">📢 Подписаться</a>
+  <div style="height:12px"></div>
+  <button class="gate-btn-outline" onclick="recheckSubscription()">✅ Я подписался</button>
+  <div id="channelError" style="color:#E53935;font-size:12px;margin-top:12px;display:none"></div>
+</div>
+
+<!-- ===== GATE: Captcha ===== -->
+<div class="gate-overlay" id="gateCaptcha" style="display:none">
+  <div class="gate-icon">🔒</div>
+  <div class="gate-title">Проверка</div>
+  <div class="gate-text">Решите пример для входа</div>
+  <div class="captcha-box">
+    <div class="captcha-question" id="captchaQ"></div>
+    <div class="captcha-options" id="captchaOpts"></div>
+  </div>
+  <div id="captchaError" style="color:#E53935;font-size:12px;margin-top:12px;display:none"></div>
+</div>
+
+<!-- ===== GATE: Loading ===== -->
+<div class="gate-overlay" id="gateLoading">
+  <div class="gate-icon">🍺</div>
+  <div class="gate-title">CRAFT V2.0</div>
+  <div class="loader"></div>
+  <div class="gate-text">Загрузка...</div>
+</div>
+
+<!-- ===== MAIN SCREEN ===== -->
+<div class="screen" id="screenMain">
+  <div class="header">
+    <div class="uid" id="userUID">#0000</div>
+    <div class="balance">Баланс: <span id="userBalance">0</span> крышек 🍺</div>
+  </div>
+  <div class="main-grid fade-in">
+    <div class="main-block" onclick="showScreen('cabinet')">
+      <div class="block-icon">👤</div><div class="block-title">Личный кабинет</div>
     </div>
-    <div class="main-grid">
-        <div class="main-block" onclick="openSection('cabinet')">
-            <div class="block-icon">👤</div><div class="block-title">Личный кабинет</div>
-        </div>
-        <div class="main-block" onclick="openSection('connection')">
-            <div class="block-icon">🔗</div><div class="block-title">Подключение</div>
-        </div>
-        <div class="main-block sos-block" onclick="openSection('sos')">
-            <div class="block-icon">🆘</div><div class="block-title">SOS</div>
-        </div>
-        <div class="main-block" onclick="openSection('menu')">
-            <div class="block-icon">📚</div><div class="block-title">Меню</div>
-        </div>
+    <div class="main-block" onclick="showScreen('connection')">
+      <div class="block-icon">🔗</div><div class="block-title">Подключение</div>
     </div>
-    <div class="footer">
-        <a href="#" class="footer-btn" onclick="openChannel()">📢 Канал</a>
-        <a href="#" class="footer-btn" onclick="openSupport()">💬 Поддержка</a>
+    <div class="main-block sos-block" onclick="showScreen('sos')">
+      <div class="block-icon">🆘</div><div class="block-title">SOS</div>
     </div>
-    <script>
-        async function initApp() {
-            try {
-                const tgData = getTelegramData();
-                const response = await fetch('/api/init', {
-                    method: 'POST', headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(tgData)
-                });
-                if (response.ok) { const d = await response.json(); updateUI(d); }
-            } catch (e) { console.error('Init failed:', e); }
-        }
-        function getTelegramData() {
-            if (typeof Telegram !== 'undefined' && Telegram.WebApp.initDataUnsafe.user) {
-                const u = Telegram.WebApp.initDataUnsafe.user;
-                return { telegram_id: u.id.toString(), first_name: u.first_name||'', last_name: u.last_name||'', username: u.username||'', referrer_uid: new URLSearchParams(window.location.search).get('ref') };
-            }
-            return { telegram_id: 'demo_user' };
-        }
-        function updateUI(d) {
-            if (d.system_uid) document.getElementById('userUID').textContent = '#' + d.system_uid;
-            if (d.caps_balance !== undefined) document.getElementById('userBalance').textContent = d.caps_balance;
-        }
-        function openSection(s) { alert('Открываю: ' + s); }
-        function openChannel() { if (typeof Telegram !== 'undefined') Telegram.WebApp.openTelegramLink('https://t.me/CRAFT_channel'); }
-        function openSupport() { alert('Техподдержка'); }
-        if (typeof Telegram !== 'undefined' && Telegram.WebApp) {
-            const tg = Telegram.WebApp; tg.ready(); tg.expand();
-            tg.setHeaderColor('#2C1F0E'); tg.setBackgroundColor('#1A1209');
-        }
-        document.addEventListener('DOMContentLoaded', initApp);
-    </script>
+    <div class="main-block" onclick="showScreen('menu')">
+      <div class="block-icon">📚</div><div class="block-title">Меню</div>
+    </div>
+  </div>
+  <div class="footer">
+    <a class="footer-btn" onclick="openChannelLink()">📢 Канал</a>
+    <a class="footer-btn" onclick="showScreen('support')">💬 Поддержка</a>
+  </div>
+</div>
+
+<!-- ===== CABINET SCREEN ===== -->
+<div class="overlay" id="screenCabinet">
+  <div class="overlay-bg">
+    <div class="sub-header">
+      <button class="back-btn" onclick="showScreen('main')">←</button>
+      <div class="sub-title">👤 Личный кабинет</div>
+    </div>
+    <div class="content fade-in" id="cabinetContent">
+      <div class="loader"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== CONNECTION SCREEN ===== -->
+<div class="overlay" id="screenConnection">
+  <div class="overlay-bg">
+    <div class="sub-header">
+      <button class="back-btn" onclick="showScreen('main')">←</button>
+      <div class="sub-title">🔗 Подключение</div>
+    </div>
+    <div class="content fade-in" id="connectionContent">
+      <div class="loader"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== APPLICATION FORM ===== -->
+<div class="overlay" id="screenAppForm">
+  <div class="overlay-bg">
+    <div class="sub-header">
+      <button class="back-btn" onclick="showScreen('connection')">←</button>
+      <div class="sub-title">📋 Заявка</div>
+    </div>
+    <div class="content fade-in">
+      <div class="card" style="border-color:rgba(212,135,28,.4)">
+        <div class="card-title">📋 Заявка на подключение</div>
+        <div class="card-text" style="margin-bottom:16px">Заполните форму — мы свяжемся с вами</div>
+        <div class="form-group">
+          <label class="form-label">Имя / Nickname</label>
+          <input class="form-input" id="appName" placeholder="Как к вам обращаться">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Telegram для связи</label>
+          <input class="form-input" id="appContact" placeholder="@username или номер">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Направление</label>
+          <select class="form-input" id="appCategory">
+            <option value="">Выберите...</option>
+            <option value="checks_1_10k">Чеки 1-10к</option>
+            <option value="checks_10k_plus">Чеки 10к+</option>
+            <option value="sim">Сим</option>
+            <option value="qr_nspk">QR/НСПК</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Опыт работы</label>
+          <input class="form-input" id="appExperience" placeholder="Опишите кратко ваш опыт">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Комментарий</label>
+          <textarea class="form-textarea" id="appComment" placeholder="Дополнительная информация"></textarea>
+        </div>
+        <button class="btn btn-primary" id="appSubmitBtn" onclick="submitApplication()">📨 Отправить заявку</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== SOS SCREEN ===== -->
+<div class="overlay" id="screenSos">
+  <div class="overlay-bg">
+    <div class="sub-header">
+      <button class="back-btn" onclick="showScreen('main')">←</button>
+      <div class="sub-title">🆘 SOS</div>
+    </div>
+    <div class="content fade-in">
+      <div class="card" style="border-color:rgba(198,40,40,.4)">
+        <div class="card-title" style="color:#E53935">🆘 Экстренная помощь</div>
+        <div class="card-text" style="margin-bottom:16px">Блокировка? Проблема? Опишите ситуацию — мы поможем максимально быстро</div>
+        <div class="form-group">
+          <label class="form-label">Город</label>
+          <input class="form-input" id="sosCity" placeholder="Ваш город">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Контакт для связи</label>
+          <input class="form-input" id="sosContact" placeholder="@username или телефон">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Описание проблемы</label>
+          <textarea class="form-textarea" id="sosDesc" placeholder="Что случилось? Опишите подробно"></textarea>
+        </div>
+        <button class="btn btn-danger" id="sosSubmitBtn" onclick="submitSOS()">🆘 Отправить SOS</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== MENU SCREEN ===== -->
+<div class="overlay" id="screenMenu">
+  <div class="overlay-bg">
+    <div class="sub-header">
+      <button class="back-btn" onclick="showScreen('main')">←</button>
+      <div class="sub-title">📚 Меню</div>
+    </div>
+    <div class="content fade-in">
+      <div class="menu-item" onclick="showScreen('ai')">
+        <div class="menu-icon">🤖</div>
+        <div class="menu-text">ИИ Помощник (Михалыч)</div>
+        <div class="menu-arrow">›</div>
+      </div>
+      <div class="menu-item" onclick="showScreen('university')">
+        <div class="menu-icon">🎓</div>
+        <div class="menu-text">Университет CRAFT</div>
+        <div class="menu-arrow">›</div>
+      </div>
+      <div class="menu-item" onclick="showScreen('referral')">
+        <div class="menu-icon">👥</div>
+        <div class="menu-text">Реферальная программа</div>
+        <div class="menu-arrow">›</div>
+      </div>
+      <div class="menu-item" onclick="showScreen('achievements')">
+        <div class="menu-icon">🏆</div>
+        <div class="menu-text">Достижения</div>
+        <div class="menu-arrow">›</div>
+      </div>
+      <div class="menu-item" onclick="showScreen('support')">
+        <div class="menu-icon">💬</div>
+        <div class="menu-text">Техподдержка</div>
+        <div class="menu-arrow">›</div>
+      </div>
+      <div class="menu-item" onclick="openChannelLink()">
+        <div class="menu-icon">📢</div>
+        <div class="menu-text">Наш канал</div>
+        <div class="menu-arrow">›</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== AI CHAT ===== -->
+<div class="overlay" id="screenAi">
+  <div class="overlay-bg" style="display:flex;flex-direction:column;height:100vh">
+    <div class="sub-header">
+      <button class="back-btn" onclick="showScreen('menu')">←</button>
+      <div class="sub-title">🤖 Михалыч</div>
+      <div style="margin-left:auto;font-size:11px;color:#C9A84C">5 🍺/msg</div>
+    </div>
+    <div class="chat-messages" id="chatMessages">
+      <div class="chat-msg bot">Привет! Я Михалыч 🍺 — ИИ-помощник CRAFT. Спрашивай что угодно по теме процессинга, блокировок, схем работы. Каждое сообщение стоит 5 крышек.</div>
+    </div>
+    <div class="chat-input-area">
+      <input class="chat-input" id="chatInput" placeholder="Сообщение..." onkeypress="if(event.key==='Enter')sendChat()">
+      <button class="chat-send" onclick="sendChat()">➤</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== UNIVERSITY ===== -->
+<div class="overlay" id="screenUniversity">
+  <div class="overlay-bg">
+    <div class="sub-header">
+      <button class="back-btn" onclick="showScreen('menu')">←</button>
+      <div class="sub-title">🎓 Университет</div>
+    </div>
+    <div class="content fade-in" id="universityContent">
+      <div class="loader"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== REFERRAL ===== -->
+<div class="overlay" id="screenReferral">
+  <div class="overlay-bg">
+    <div class="sub-header">
+      <button class="back-btn" onclick="showScreen('menu')">←</button>
+      <div class="sub-title">👥 Рефералы</div>
+    </div>
+    <div class="content fade-in" id="referralContent">
+      <div class="loader"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== ACHIEVEMENTS ===== -->
+<div class="overlay" id="screenAchievements">
+  <div class="overlay-bg">
+    <div class="sub-header">
+      <button class="back-btn" onclick="showScreen('menu')">←</button>
+      <div class="sub-title">🏆 Достижения</div>
+    </div>
+    <div class="content fade-in" id="achievementsContent">
+      <div class="loader"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== SUPPORT ===== -->
+<div class="overlay" id="screenSupport">
+  <div class="overlay-bg">
+    <div class="sub-header">
+      <button class="back-btn" onclick="showScreen('main')">←</button>
+      <div class="sub-title">💬 Поддержка</div>
+    </div>
+    <div class="content fade-in">
+      <div class="card">
+        <div class="card-title">💬 Напишите нам</div>
+        <div class="card-text" style="margin-bottom:16px">Опишите вашу проблему или вопрос</div>
+        <div class="form-group">
+          <textarea class="form-textarea" id="supportMsg" placeholder="Ваше сообщение..."></textarea>
+        </div>
+        <button class="btn btn-primary" id="supportBtn" onclick="submitSupport()">📨 Отправить</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast" style="display:none"></div>
+
+<script>
+/* ============ STATE ============ */
+const APP = {
+  tgId: null, uid: null, balance: 0, firstName: '', lastName: '', username: '',
+  profile: null, channelOk: false, captchaOk: false, ready: false
+};
+const CHANNEL_LINK = 'https://t.me/+MepEj5pb6kU3OGI1';
+const API = '';
+
+/* ============ TELEGRAM ============ */
+let tg = null;
+if (typeof Telegram !== 'undefined' && Telegram.WebApp) {
+  tg = Telegram.WebApp;
+  tg.ready(); tg.expand();
+  try { tg.setHeaderColor('#2C1F0E'); tg.setBackgroundColor('#1A1209'); } catch(e){}
+}
+function getTgData() {
+  if (tg && tg.initDataUnsafe && tg.initDataUnsafe.user) {
+    const u = tg.initDataUnsafe.user;
+    return { telegram_id: u.id.toString(), first_name: u.first_name||'', last_name: u.last_name||'', username: u.username||'', referrer_uid: new URLSearchParams(location.search).get('ref') };
+  }
+  return { telegram_id: 'demo_' + Date.now() };
+}
+
+/* ============ INIT FLOW ============ */
+document.addEventListener('DOMContentLoaded', startApp);
+async function startApp() {
+  const d = getTgData();
+  APP.tgId = d.telegram_id;
+  APP.firstName = d.first_name; APP.lastName = d.last_name; APP.username = d.username;
+  
+  // 1. Init user on server
+  try {
+    const r = await api('/api/init', d);
+    if (r.success) {
+      APP.uid = r.system_uid; APP.balance = r.caps_balance;
+    }
+  } catch(e) { console.error('Init failed', e); }
+  
+  // 2. Check channel subscription
+  if (APP.tgId && !APP.tgId.startsWith('demo_')) {
+    try {
+      const r = await api('/api/check-subscription', { telegram_id: APP.tgId });
+      APP.channelOk = r.subscribed === true;
+    } catch(e) { APP.channelOk = false; }
+  } else {
+    APP.channelOk = true; // demo mode
+  }
+  
+  hide('gateLoading');
+  
+  if (!APP.channelOk) {
+    show('gateChannel');
+    return;
+  }
+  showCaptcha();
+}
+
+/* ============ CHANNEL CHECK ============ */
+function openChannelLink() {
+  if (tg) { tg.openTelegramLink(CHANNEL_LINK); }
+  else { window.open(CHANNEL_LINK, '_blank'); }
+}
+async function recheckSubscription() {
+  const errEl = document.getElementById('channelError');
+  errEl.style.display = 'none';
+  try {
+    const r = await api('/api/check-subscription', { telegram_id: APP.tgId });
+    if (r.subscribed) {
+      APP.channelOk = true;
+      hide('gateChannel');
+      showCaptcha();
+    } else {
+      errEl.textContent = 'Подписка не найдена. Подпишитесь и попробуйте снова.';
+      errEl.style.display = 'block';
+    }
+  } catch(e) {
+    errEl.textContent = 'Ошибка проверки. Попробуйте ещё раз.';
+    errEl.style.display = 'block';
+  }
+}
+
+/* ============ CAPTCHA ============ */
+let captchaAnswer = 0;
+function showCaptcha() {
+  const a = Math.floor(Math.random()*20)+1;
+  const b = Math.floor(Math.random()*20)+1;
+  captchaAnswer = a + b;
+  document.getElementById('captchaQ').textContent = a + ' + ' + b + ' = ?';
+  
+  const opts = new Set([captchaAnswer]);
+  while(opts.size < 4) opts.add(Math.floor(Math.random()*40)+2);
+  const arr = Array.from(opts).sort(()=>Math.random()-.5);
+  
+  const container = document.getElementById('captchaOpts');
+  container.innerHTML = '';
+  arr.forEach(v => {
+    const btn = document.createElement('div');
+    btn.className = 'captcha-opt';
+    btn.textContent = v;
+    btn.onclick = () => checkCaptcha(v, btn);
+    container.appendChild(btn);
+  });
+  show('gateCaptcha');
+}
+function checkCaptcha(val, btn) {
+  if (val === captchaAnswer) {
+    btn.classList.add('correct');
+    APP.captchaOk = true;
+    setTimeout(() => {
+      hide('gateCaptcha');
+      enterApp();
+    }, 400);
+  } else {
+    btn.classList.add('wrong');
+    const errEl = document.getElementById('captchaError');
+    errEl.textContent = 'Неверно! Попробуйте ещё раз';
+    errEl.style.display = 'block';
+    setTimeout(() => { btn.classList.remove('wrong'); errEl.style.display = 'none'; }, 1000);
+  }
+}
+
+/* ============ ENTER APP ============ */
+function enterApp() {
+  document.getElementById('userUID').textContent = '#' + (APP.uid || '0000');
+  document.getElementById('userBalance').textContent = APP.balance || 0;
+  document.getElementById('screenMain').classList.add('active');
+  APP.ready = true;
+}
+
+/* ============ NAVIGATION ============ */
+function showScreen(name) {
+  // Close all overlays
+  document.querySelectorAll('.overlay').forEach(el => el.classList.remove('active'));
+  
+  if (name === 'main') {
+    updateBalance();
+    return;
+  }
+  
+  const screenId = 'screen' + name.charAt(0).toUpperCase() + name.slice(1);
+  const el = document.getElementById(screenId);
+  if (el) {
+    el.classList.add('active');
+    // Load content for specific screens
+    if (name === 'cabinet') loadCabinet();
+    if (name === 'connection') loadConnection();
+    if (name === 'university') loadUniversity();
+    if (name === 'referral') loadReferral();
+    if (name === 'achievements') loadAchievements();
+    if (name === 'appForm') {} // static form
+  }
+}
+function updateBalance() {
+  document.getElementById('userBalance').textContent = APP.balance || 0;
+}
+
+/* ============ CABINET ============ */
+async function loadCabinet() {
+  const el = document.getElementById('cabinetContent');
+  el.innerHTML = '<div class="loader"></div>';
+  try {
+    const r = await api('/api/user/profile?telegram_id=' + APP.tgId, null, 'GET');
+    if (r.success) {
+      const p = r.profile;
+      APP.profile = p;
+      el.innerHTML = `
+        <div class="card">
+          <div style="text-align:center;margin-bottom:12px">
+            <div style="font-size:48px;animation:iconPulse 2s ease-in-out infinite">👤</div>
+            <div style="font-size:20px;font-weight:700;color:#D4871C;margin-top:8px">#${p.system_uid}</div>
+            <div style="font-size:14px;color:#C9A84C">${p.first_name||''} ${p.last_name||''}</div>
+            ${p.username ? '<div style="font-size:12px;color:#C9A84C">@'+p.username+'</div>' : ''}
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title">💰 Баланс</div>
+          <div class="card-value">${p.caps_balance} крышек 🍺</div>
+          <div class="stat-row"><span class="stat-label">Заработано всего</span><span class="stat-val">${p.total_earned_caps} 🍺</span></div>
+          <div class="stat-row"><span class="stat-label">Потрачено</span><span class="stat-val">${p.total_spent_caps} 🍺</span></div>
+          <div class="stat-row"><span class="stat-label">Запросов к ИИ</span><span class="stat-val">${p.ai_requests_count}</span></div>
+        </div>
+        <div class="card">
+          <div class="card-title">🏆 Достижения</div>
+          <div style="margin-top:8px">${p.achievements && p.achievements.length > 0 ? p.achievements.map(a => '<span class="badge">'+a.icon+' '+a.name+'</span>').join('') : '<div class="card-text">Пока нет достижений</div>'}</div>
+        </div>
+        <div class="card">
+          <div class="card-title">👥 Рефералы</div>
+          ${p.referrals && Object.keys(p.referrals).length > 0 ? Object.entries(p.referrals).map(([k,v]) => '<div class="stat-row"><span class="stat-label">'+k.replace('_',' ')+'</span><span class="stat-val">'+v.count+' чел / '+v.caps_earned+' 🍺</span></div>').join('') : '<div class="card-text">Приглашайте друзей и получайте крышки!</div>'}
+          <div style="margin-top:12px;padding:10px;background:rgba(212,135,28,.1);border-radius:8px;text-align:center">
+            <div style="font-size:12px;color:#C9A84C;margin-bottom:4px">Ваша реф. ссылка:</div>
+            <div style="font-size:11px;color:#FFF8E7;word-break:break-all">https://t.me/CraftV2Bot?start=ref_${p.system_uid}</div>
+          </div>
+        </div>`;
+      APP.balance = p.caps_balance;
+      updateBalance();
+    } else {
+      el.innerHTML = '<div class="card"><div class="card-text">Ошибка загрузки профиля</div></div>';
+    }
+  } catch(e) {
+    el.innerHTML = '<div class="card"><div class="card-text">Ошибка соединения</div></div>';
+  }
+}
+
+/* ============ CONNECTION / OFFERS ============ */
+async function loadConnection() {
+  const el = document.getElementById('connectionContent');
+  el.innerHTML = '<div class="loader"></div>';
+  try {
+    const r = await api('/api/offers', null, 'GET');
+    if (r.success && r.offers) {
+      let html = '<div class="card" style="margin-bottom:16px"><div class="card-title">🔗 Доступные направления</div><div class="card-text">Выберите направление и подайте заявку</div></div>';
+      r.offers.forEach(o => {
+        html += `<div class="offer-card">
+          <div><div class="offer-name">${o.description}</div><div class="offer-rate">${o.rate_from}% — ${o.rate_to}%</div></div>
+          <button class="offer-apply" onclick="showScreen('appForm')">Подать →</button>
+        </div>`;
+      });
+      html += '<div style="margin-top:16px"><button class="btn btn-primary" onclick="showScreen(\'appForm\')">📋 Заполнить заявку</button></div>';
+      el.innerHTML = html;
+    } else {
+      el.innerHTML = '<div class="card"><div class="card-text">Нет доступных офферов</div></div>';
+    }
+  } catch(e) {
+    el.innerHTML = '<div class="card"><div class="card-text">Ошибка загрузки</div></div>';
+  }
+}
+
+/* ============ APPLICATION FORM ============ */
+async function submitApplication() {
+  const btn = document.getElementById('appSubmitBtn');
+  const name = document.getElementById('appName').value.trim();
+  const contact = document.getElementById('appContact').value.trim();
+  const category = document.getElementById('appCategory').value;
+  const experience = document.getElementById('appExperience').value.trim();
+  const comment = document.getElementById('appComment').value.trim();
+  
+  if (!name || !contact || !category) { toast('Заполните обязательные поля'); return; }
+  
+  btn.disabled = true; btn.textContent = '⏳ Отправка...';
+  try {
+    const r = await api('/api/application/submit', {
+      telegram_id: APP.tgId,
+      form_data: { name, contact, category, experience, comment }
+    });
+    if (r.success) {
+      toast('✅ Заявка отправлена!');
+      setTimeout(() => showScreen('main'), 1500);
+    } else {
+      toast('❌ ' + (r.error || 'Ошибка'));
+    }
+  } catch(e) { toast('❌ Ошибка соединения'); }
+  btn.disabled = false; btn.textContent = '📨 Отправить заявку';
+}
+
+/* ============ SOS ============ */
+async function submitSOS() {
+  const btn = document.getElementById('sosSubmitBtn');
+  const city = document.getElementById('sosCity').value.trim();
+  const contact = document.getElementById('sosContact').value.trim();
+  const desc = document.getElementById('sosDesc').value.trim();
+  
+  if (!city || !contact || !desc) { toast('Заполните все поля'); return; }
+  
+  btn.disabled = true; btn.textContent = '⏳ Отправка...';
+  try {
+    const r = await api('/api/sos/submit', { telegram_id: APP.tgId, city, contact, description: desc });
+    if (r.success) {
+      toast('✅ SOS заявка отправлена! Ожидайте ответа');
+      setTimeout(() => showScreen('main'), 1500);
+    } else {
+      toast('❌ ' + (r.error || 'Ошибка'));
+    }
+  } catch(e) { toast('❌ Ошибка соединения'); }
+  btn.disabled = false; btn.textContent = '🆘 Отправить SOS';
+}
+
+/* ============ SUPPORT ============ */
+async function submitSupport() {
+  const btn = document.getElementById('supportBtn');
+  const msg = document.getElementById('supportMsg').value.trim();
+  if (!msg) { toast('Напишите сообщение'); return; }
+  
+  btn.disabled = true; btn.textContent = '⏳ Отправка...';
+  try {
+    const r = await api('/api/support/submit', { telegram_id: APP.tgId, message: msg });
+    if (r.success) {
+      toast('✅ Обращение отправлено!');
+      document.getElementById('supportMsg').value = '';
+      setTimeout(() => showScreen('main'), 1500);
+    } else { toast('❌ ' + (r.error || 'Ошибка')); }
+  } catch(e) { toast('❌ Ошибка соединения'); }
+  btn.disabled = false; btn.textContent = '📨 Отправить';
+}
+
+/* ============ AI CHAT ============ */
+let chatBusy = false;
+async function sendChat() {
+  if (chatBusy) return;
+  const input = document.getElementById('chatInput');
+  const msg = input.value.trim();
+  if (!msg) return;
+  
+  input.value = '';
+  addChatMsg(msg, 'user');
+  chatBusy = true;
+  
+  const typingEl = addChatMsg('Михалыч печатает...', 'bot');
+  
+  try {
+    const r = await api('/api/ai/chat', { telegram_id: APP.tgId, message: msg });
+    typingEl.remove();
+    if (r.success) {
+      addChatMsg(r.response, 'bot');
+      APP.balance = Math.max(0, APP.balance - (r.caps_spent || 5));
+      updateBalance();
+    } else {
+      addChatMsg('❌ ' + (r.error || 'Ошибка'), 'bot');
+    }
+  } catch(e) {
+    typingEl.remove();
+    addChatMsg('❌ Ошибка соединения', 'bot');
+  }
+  chatBusy = false;
+}
+function addChatMsg(text, type) {
+  const el = document.createElement('div');
+  el.className = 'chat-msg ' + type;
+  el.textContent = text;
+  const container = document.getElementById('chatMessages');
+  container.appendChild(el);
+  container.scrollTop = container.scrollHeight;
+  return el;
+}
+
+/* ============ UNIVERSITY ============ */
+async function loadUniversity() {
+  const el = document.getElementById('universityContent');
+  el.innerHTML = '<div class="loader"></div>';
+  try {
+    const r = await api('/api/university/lessons', null, 'GET');
+    if (r.success && r.lessons) {
+      let html = '<div class="card" style="margin-bottom:16px"><div class="card-title">🎓 Университет CRAFT</div><div class="card-text">Изучайте уроки и зарабатывайте крышки</div></div>';
+      r.lessons.forEach((l, i) => {
+        html += `<div class="lesson-card">
+          <div class="lesson-num">Урок ${l.order_index || i+1}</div>
+          <div class="lesson-title">${l.title}</div>
+          <div class="lesson-reward">Награда: ${l.reward_caps} 🍺</div>
+        </div>`;
+      });
+      el.innerHTML = html;
+    } else {
+      el.innerHTML = '<div class="card"><div class="card-text">Уроки скоро появятся</div></div>';
+    }
+  } catch(e) { el.innerHTML = '<div class="card"><div class="card-text">Ошибка загрузки</div></div>'; }
+}
+
+/* ============ REFERRAL ============ */
+async function loadReferral() {
+  const el = document.getElementById('referralContent');
+  if (APP.profile) {
+    const p = APP.profile;
+    el.innerHTML = `
+      <div class="card">
+        <div class="card-title">👥 Реферальная программа</div>
+        <div class="card-text" style="margin-bottom:12px">Приглашайте друзей — получайте крышки!</div>
+        <div class="stat-row"><span class="stat-label">Уровень 1</span><span class="stat-val">5% комиссии + 30 🍺</span></div>
+        <div class="stat-row"><span class="stat-label">Уровень 2</span><span class="stat-val">2% комиссии + 15 🍺</span></div>
+      </div>
+      <div class="card">
+        <div class="card-title">🔗 Ваша ссылка</div>
+        <div style="padding:12px;background:rgba(26,18,9,.8);border-radius:8px;margin-top:8px;font-size:12px;color:#FFF8E7;word-break:break-all;text-align:center">
+          https://t.me/CraftV2Bot?start=ref_${p.system_uid}
+        </div>
+      </div>`;
+  } else {
+    el.innerHTML = '<div class="loader"></div>';
+    await loadCabinet(); // load profile first
+    loadReferral();
+  }
+}
+
+/* ============ ACHIEVEMENTS ============ */
+async function loadAchievements() {
+  const el = document.getElementById('achievementsContent');
+  if (APP.profile && APP.profile.achievements) {
+    const achs = APP.profile.achievements;
+    if (achs.length > 0) {
+      el.innerHTML = achs.map(a => `<div class="card"><div style="display:flex;align-items:center;gap:12px"><div style="font-size:32px">${a.icon}</div><div><div style="font-weight:600;color:#FFF8E7">${a.name}</div><div style="font-size:12px;color:#C9A84C">+${a.reward_caps} 🍺</div></div></div></div>`).join('');
+    } else {
+      el.innerHTML = '<div class="card"><div class="card-title">🏆 Достижения</div><div class="card-text">Выполняйте задания, чтобы получить награды!</div></div>';
+    }
+  } else {
+    el.innerHTML = '<div class="loader"></div>';
+    await loadCabinet();
+    loadAchievements();
+  }
+}
+
+/* ============ UTILS ============ */
+async function api(url, body, method) {
+  method = method || (body ? 'POST' : 'GET');
+  const opts = { method, headers: { 'Content-Type': 'application/json' } };
+  if (body && method !== 'GET') opts.body = JSON.stringify(body);
+  const r = await fetch(API + url, opts);
+  return r.json();
+}
+function show(id) { document.getElementById(id).style.display = 'flex'; }
+function hide(id) { document.getElementById(id).style.display = 'none'; }
+function toast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg; el.style.display = 'block';
+  setTimeout(() => { el.style.display = 'none'; }, 2500);
+}
+</script>
 </body>
 </html>"""
 
