@@ -375,8 +375,11 @@ def get_ai_response(user_id, message, telegram_id):
         cur.execute("SELECT session_id, message_count, is_blocked, block_expires_at FROM user_ai_sessions WHERE user_id = %s", (user_id,))
         session = cur.fetchone()
         if not session:
-            conn.close()
-            return {"success": False, "error": "AI session not found"}
+            # Auto-create AI session if missing
+            new_session_id = str(uuid.uuid4())
+            cur.execute("INSERT INTO user_ai_sessions (user_id, session_id) VALUES (%s, %s)", (user_id, new_session_id))
+            conn.commit()
+            session = {'session_id': new_session_id, 'message_count': 0, 'is_blocked': False, 'block_expires_at': None}
         
         # Check anti-spam block
         if session['is_blocked']:
@@ -1057,10 +1060,22 @@ if (typeof Telegram !== 'undefined' && Telegram.WebApp) {
   tg.ready(); tg.expand();
   try { tg.setHeaderColor('#2C1F0E'); tg.setBackgroundColor('#1A1209'); } catch(e){}
 }
+function getReferrerUid() {
+  const urlParams = new URLSearchParams(window.location.search);
+  let startParam = urlParams.get('tgWebAppStartParam');
+  if (!startParam && tg && tg.initDataUnsafe) startParam = tg.initDataUnsafe.start_param;
+  if (!startParam) { const ref = urlParams.get('ref'); if (ref) return ref; }
+  if (startParam && startParam.startsWith('ref_')) {
+    const uid = startParam.replace('ref_', '');
+    try { localStorage.setItem('craft_referral_uid', uid); } catch(e){}
+    return uid;
+  }
+  try { return localStorage.getItem('craft_referral_uid'); } catch(e){ return null; }
+}
 function getTgData() {
   if (tg && tg.initDataUnsafe && tg.initDataUnsafe.user) {
     const u = tg.initDataUnsafe.user;
-    return { telegram_id: u.id.toString(), first_name: u.first_name||'', last_name: u.last_name||'', username: u.username||'', referrer_uid: new URLSearchParams(location.search).get('ref') };
+    return { telegram_id: u.id.toString(), first_name: u.first_name||'', last_name: u.last_name||'', username: u.username||'', referrer_uid: getReferrerUid() };
   }
   return { telegram_id: 'demo_' + Date.now() };
 }
