@@ -1898,6 +1898,192 @@ def api_health():
     except Exception as e:
         return jsonify({"status": "error", "error": str(e)}), 500
 
+# ===============================
+# TELEGRAM BOT WEBHOOK
+# ===============================
+
+def send_telegram_message(chat_id, text, reply_markup=None):
+    """Отправка сообщения через Telegram Bot API"""
+    try:
+        payload = {
+            'chat_id': chat_id,
+            'text': text,
+            'parse_mode': 'Markdown'
+        }
+        
+        if reply_markup:
+            payload['reply_markup'] = reply_markup
+        
+        response = http_requests.post(
+            f'https://api.telegram.org/bot{config.TELEGRAM_BOT_TOKEN}/sendMessage',
+            json=payload,
+            timeout=10
+        )
+        return response.json()
+    except Exception as e:
+        logger.error(f"Send message error: {e}")
+        return None
+
+def handle_bot_start_command(chat_id, user_id, text, username=None, first_name=None):
+    """Обработка команды /start от бота"""
+    try:
+        # Регистрация пользователя в БД если еще нет
+        user = get_or_create_user(user_id, username, first_name)
+        
+        # Проверка реферального параметра
+        referral_message = ""
+        if 'ref_' in text:
+            try:
+                referrer_id = text.split('ref_')[1].strip()
+                
+                if referrer_id != user_id:  # Нельзя реферить самого себя
+                    # Проверить что реферер существует
+                    referrer = get_user(referrer_id)
+                    if referrer:
+                        # Сохранить реферальную связь
+                        conn = get_db()
+                        cur = conn.cursor()
+                        cur.execute(
+                            '''INSERT INTO pending_referrals (referred_user_id, referrer_id) 
+                               VALUES (%s, %s) 
+                               ON CONFLICT DO NOTHING''',
+                            (user_id, referrer_id)
+                        )
+                        conn.commit()
+                        conn.close()
+                        
+                        referral_message = f"\n\n🎉 Отлично! Вас пригласил пользователь #{referrer['system_uid']}!\nВы оба получите бонусы после регистрации в приложении!"
+            except Exception as e:
+                logger.error(f"Referral processing error: {e}")
+        
+        # Создать WebApp кнопку
+        keyboard = {
+            'inline_keyboard': [[{
+                'text': '🍺 Открыть CRAFT',
+                'web_app': {'url': 'https://craft-main-app.vercel.app'}
+            }]]
+        }
+        
+        welcome_text = f"🍺 Добро пожаловать в CRAFT!{referral_message}\n\nНажмите кнопку чтобы открыть приложение:"
+        
+        send_telegram_message(chat_id, welcome_text, keyboard)
+        
+    except Exception as e:
+        logger.error(f"Start command error: {e}")
+        send_telegram_message(chat_id, "❌ Произошла ошибка, попробуйте позже")
+
+def handle_bot_ref_command(chat_id, user_id):
+    """Обработка команды /ref от бота"""
+    try:
+        user = get_user(user_id)
+        if not user:
+            send_telegram_message(chat_id, "❌ Пользователь не найден")
+            return
+            
+        ref_link = f"https://t.me/CRAFT_hell_bot?start=ref_{user_id}"
+        
+        message = (
+            f"🔗 *Ваша реферальная ссылка:*\n\n"
+            f"`{ref_link}`\n\n"
+            f"💰 *Система наград:*\n"
+            f"• 1-й уровень: **30 крышек** за каждого друга\n"
+            f"• 2-й уровень: **15 крышек** за друзей ваших друзей\n\n"
+            f"🍺 Поделитесь ссылкой с друзьями и зарабатывайте!"
+        )
+        
+        send_telegram_message(chat_id, message)
+        
+    except Exception as e:
+        logger.error(f"Ref command error: {e}")
+        send_telegram_message(chat_id, "❌ Ошибка получения реферальной ссылки")
+
+def handle_bot_stats_command(chat_id, user_id):
+    """Обработка команды /stats от бота"""
+    try:
+        user = get_user(user_id)
+        if not user:
+            send_telegram_message(chat_id, "❌ Пользователь не найден")
+            return
+            
+        conn = get_db()
+        cur = conn.cursor()
+        
+        # Получить статистику рефералов
+        cur.execute(
+            'SELECT COUNT(*) as cnt FROM referrals WHERE referrer_id = %s AND level = 1',
+            (user['id'],)
+        )
+        level1_count = cur.fetchone()['cnt']
+        
+        cur.execute(
+            'SELECT COUNT(*) as cnt FROM referrals WHERE referrer_id = %s AND level = 2',
+            (user['id'],)
+        )
+        level2_count = cur.fetchone()['cnt']
+        
+        cur.execute(
+            'SELECT COALESCE(SUM(bonus_amount), 0) as total FROM referrals WHERE referrer_id = %s',
+            (user['id'],)
+        )
+        total_earned = cur.fetchone()['total']
+        
+        conn.close()
+        
+        message = (
+            f"📊 *Ваша реферальная статистика:*\n\n"
+            f"👥 Рефералы 1-го уровня: **{level1_count}**\n"
+            f"👥 Рефералы 2-го уровня: **{level2_count}**\n"
+            f"💰 Заработано всего: **{total_earned} крышек**\n\n"
+            f"🍺 Продолжайте приглашать друзей!"
+        )
+        
+        send_telegram_message(chat_id, message)
+        
+    except Exception as e:
+        logger.error(f"Stats command error: {e}")
+        send_telegram_message(chat_id, "❌ Ошибка получения статистики")
+
+@app.route('/api/bot/webhook', methods=['GET', 'POST'])
+def bot_webhook():
+    """Telegram Bot Webhook Endpoint"""
+    
+    if request.method == 'GET':
+        # GET запрос - статус webhook
+        return jsonify({
+            'status': 'CRAFT Bot Webhook',
+            'version': 'v6.2',
+            'ready': True,
+            'endpoint': '/api/bot/webhook'
+        })
+    
+    # POST запрос - обработка webhook от Telegram
+    try:
+        update = request.get_json()
+        
+        if 'message' in update:
+            message = update['message']
+            chat_id = message['chat']['id']
+            user_id = str(message['from']['id'])
+            username = message['from'].get('username')
+            first_name = message['from'].get('first_name')
+            text = message.get('text', '')
+            
+            if text.startswith('/start'):
+                handle_bot_start_command(chat_id, user_id, text, username, first_name)
+            elif text == '/ref':
+                handle_bot_ref_command(chat_id, user_id)
+            elif text == '/stats':
+                handle_bot_stats_command(chat_id, user_id)
+            else:
+                # Неизвестная команда
+                send_telegram_message(chat_id, "🤖 Доступные команды:\n/start - начать\n/ref - получить реферальную ссылку\n/stats - статистика рефералов")
+        
+        return jsonify({'ok': True})
+        
+    except Exception as e:
+        logger.error(f"Webhook error: {e}")
+        return jsonify({'ok': False, 'error': str(e)}), 500
+
 # Vercel handler
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5020, debug=True)
