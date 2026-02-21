@@ -2278,7 +2278,7 @@ def api_health():
         cur.execute("SELECT COUNT(*) as cnt FROM users")
         count = cur.fetchone()['cnt']
         conn.close()
-        return jsonify({"status": "ok", "users": count, "database": "connected"})
+        return jsonify({"status": "ok", "users": count, "database": "connected", "version": "2.1-security"})
     except Exception as e:
         return jsonify({"status": "error", "error": str(e)}), 500
 
