@@ -1296,8 +1296,8 @@ async function loadCabinet() {
           ${p.referrals && Object.keys(p.referrals).length > 0 ? Object.entries(p.referrals).map(([k,v]) => '<div class="stat-row"><span class="stat-label">'+k.replace('_',' ')+'</span><span class="stat-val">'+v.count+' чел / '+v.caps_earned+' 🍺</span></div>').join('') : '<div class="card-text">Приглашайте друзей и получайте крышки!</div>'}
           <div style="margin-top:12px;padding:10px;background:rgba(212,135,28,.1);border-radius:8px;text-align:center">
             <div style="font-size:12px;color:#C9A84C;margin-bottom:4px">Ваша реф. ссылка:</div>
-            <div style="font-size:11px;color:#FFF8E7;word-break:break-all;margin-bottom:8px">https://t.me/CRAFT_hell_bot?start=ref_${p.system_uid}</div>
-            <button style="padding:6px 14px;background:linear-gradient(135deg,#D4871C,#C9A84C);border:none;border-radius:8px;color:#1A1209;font-size:11px;font-weight:600;cursor:pointer" onclick="copyRefLink('https://t.me/CRAFT_hell_bot?start=ref_${p.system_uid}')">📋 Копировать</button>
+            <div style="font-size:11px;color:#FFF8E7;word-break:break-all;margin-bottom:8px">https://t.me/CRAFT_hell_bot?start=ref_${APP.tgId}</div>
+            <button style="padding:6px 14px;background:linear-gradient(135deg,#D4871C,#C9A84C);border:none;border-radius:8px;color:#1A1209;font-size:11px;font-weight:600;cursor:pointer" onclick="copyRefLink('https://t.me/CRAFT_hell_bot?start=ref_${APP.tgId}')">📋 Копировать</button>
           </div>
         </div>`;
       APP.balance = p.caps_balance;
@@ -1525,9 +1525,9 @@ async function loadReferral() {
         <div class="card">
           <div class="card-title">🔗 Ваша ссылка</div>
           <div style="padding:12px;background:rgba(26,18,9,.8);border-radius:8px;margin-top:8px;font-size:12px;color:#FFF8E7;word-break:break-all;text-align:center">
-            https://t.me/CRAFT_hell_bot?start=ref_${APP.uid || '0000'}
+            https://t.me/CRAFT_hell_bot?start=ref_${APP.tgId}
           </div>
-          <button class="btn btn-primary" style="margin-top:10px;font-size:13px;padding:10px" onclick="copyRefLink('https://t.me/CRAFT_hell_bot?start=ref_${APP.uid || '0000'}')">📋 Копировать ссылку</button>
+          <button class="btn btn-primary" style="margin-top:10px;font-size:13px;padding:10px" onclick="copyRefLink('https://t.me/CRAFT_hell_bot?start=ref_${APP.tgId}')">📋 Копировать ссылку</button>
         </div>`;
     } else { throw new Error(); }
   } catch(e) {
@@ -1545,9 +1545,9 @@ async function loadReferral() {
       <div class="card">
         <div class="card-title">🔗 Ваша ссылка</div>
         <div style="padding:12px;background:rgba(26,18,9,.8);border-radius:8px;margin-top:8px;font-size:12px;color:#FFF8E7;word-break:break-all;text-align:center">
-          https://t.me/CRAFT_hell_bot?start=ref_${p.system_uid || APP.uid || '0000'}
+          https://t.me/CRAFT_hell_bot?start=ref_${APP.tgId}
         </div>
-        <button class="btn btn-primary" style="margin-top:10px;font-size:13px;padding:10px" onclick="copyRefLink('https://t.me/CRAFT_hell_bot?start=ref_${p.system_uid || APP.uid || '0000'}')">📋 Копировать ссылку</button>
+        <button class="btn btn-primary" style="margin-top:10px;font-size:13px;padding:10px" onclick="copyRefLink('https://t.me/CRAFT_hell_bot?start=ref_${APP.tgId}')">📋 Копировать ссылку</button>
       </div>`;
   }
 }
