@@ -249,6 +249,15 @@ def init_database():
             ip_address TEXT,
             created_at TIMESTAMPTZ DEFAULT NOW()
         );
+        
+        CREATE TABLE IF NOT EXISTS pending_referrals (
+            id SERIAL PRIMARY KEY,
+            referred_user_id TEXT NOT NULL,
+            referrer_id TEXT NOT NULL,
+            processed BOOLEAN DEFAULT FALSE,
+            created_at TIMESTAMPTZ DEFAULT NOW(),
+            UNIQUE(referred_user_id, referrer_id)
+        );
         """)
         
         # Insert initial data if empty
@@ -1972,20 +1981,17 @@ def send_telegram_message(chat_id, text, reply_markup=None):
         return None
 
 def handle_bot_start_command(chat_id, user_id, text, username=None, first_name=None):
-    """Обработка команды /start от бота"""
+    """Обработка команды /start от бота
+    
+    Telegram автоматически отправляет "/start ref_XXXXX" когда пользователь 
+    кликает ссылку https://t.me/CRAFT_hell_bot?start=ref_XXXXX
+    Пользователь НЕ печатает эту команду сам!
+    
+    Бот НЕ создает пользователя в таблице users (нет system_uid).
+    Пользователь создается через WebApp /api/init.
+    Бот только сохраняет pending_referral для обработки при регистрации.
+    """
     try:
-        # Регистрация пользователя в БД если еще нет
-        conn = get_db()
-        cur = conn.cursor()
-        cur.execute(
-            '''INSERT INTO users (telegram_id, username, first_name, caps_balance) 
-               VALUES (%s, %s, %s, 100) 
-               ON CONFLICT (telegram_id) DO NOTHING''',
-            (user_id, username, first_name)
-        )
-        conn.commit()
-        conn.close()
-        
         # Проверка реферального параметра
         is_referral = False
         referrer_name = ""
@@ -1993,33 +1999,37 @@ def handle_bot_start_command(chat_id, user_id, text, username=None, first_name=N
             try:
                 referrer_id = text.split('ref_')[1].strip()
                 
-                if referrer_id != user_id:  # Нельзя реферить самого себя
-                    # Проверить что реферер существует
-                    referrer = get_user(referrer_id)
+                if referrer_id and referrer_id != user_id:  # Нельзя реферить самого себя
+                    # Сохранить реферальную связь в pending_referrals
+                    # Даже если реферер еще не в WebApp - обработается при регистрации
+                    conn = get_db()
+                    cur = conn.cursor()
+                    cur.execute(
+                        '''INSERT INTO pending_referrals (referred_user_id, referrer_id, processed) 
+                           VALUES (%s, %s, FALSE) 
+                           ON CONFLICT (referred_user_id, referrer_id) DO NOTHING''',
+                        (str(user_id), str(referrer_id))
+                    )
+                    conn.commit()
+                    conn.close()
+                    
+                    is_referral = True
+                    
+                    # Попробовать получить имя реферера
+                    referrer = get_user(str(referrer_id))
                     if referrer:
-                        # Сохранить реферальную связь
-                        conn = get_db()
-                        cur = conn.cursor()
-                        cur.execute(
-                            '''INSERT INTO pending_referrals (referred_user_id, referrer_id) 
-                               VALUES (%s, %s) 
-                               ON CONFLICT DO NOTHING''',
-                            (user_id, referrer_id)
-                        )
-                        conn.commit()
-                        conn.close()
-                        
-                        is_referral = True
                         referrer_name = referrer.get('first_name') or referrer.get('username') or f"#{referrer['system_uid']}"
                         
-                        # Notify referrer about new referral
+                        # Notify referrer about new referral click
                         send_telegram_message(
                             referrer_id,
                             f"🎉 *У вас новый реферал!*\n\n"
-                            f"👤 **{first_name or username or 'Пользователь'}** перешел по вашей ссылке\n"
+                            f"👤 *{first_name or username or 'Пользователь'}* перешел по вашей ссылке\n"
                             f"⏳ Осталось только зарегистрироваться в приложении\n\n"
-                            f"💰 После регистрации вы получите **+30 крышек**!"
+                            f"💰 После регистрации вы получите *+30 крышек*!"
                         )
+                    else:
+                        referrer_name = f"#{referrer_id}"
                         
             except Exception as e:
                 logger.error(f"Referral processing error: {e}")
@@ -2126,7 +2136,7 @@ def handle_bot_stats_command(chat_id, user_id):
         level2_count = cur.fetchone()['cnt']
         
         cur.execute(
-            'SELECT COALESCE(SUM(bonus_amount), 0) as total FROM referrals WHERE referrer_id = %s',
+            'SELECT COALESCE(SUM(caps_earned), 0) as total FROM referrals WHERE referrer_id = %s',
             (user['id'],)
         )
         total_earned = cur.fetchone()['total']
@@ -2187,6 +2197,26 @@ def bot_webhook():
     except Exception as e:
         logger.error(f"Webhook error: {e}")
         return jsonify({'ok': False, 'error': str(e)}), 500
+
+@app.route('/api/bot/set-webhook', methods=['GET'])
+def set_webhook():
+    """Set Telegram webhook URL"""
+    webhook_url = "https://craft-main-app.vercel.app/api/bot/webhook"
+    resp = http_requests.post(
+        f"https://api.telegram.org/bot{config.TELEGRAM_BOT_TOKEN}/setWebhook",
+        json={"url": webhook_url, "allowed_updates": ["message"]},
+        timeout=10
+    )
+    return jsonify(resp.json())
+
+@app.route('/api/bot/webhook-info', methods=['GET'])
+def webhook_info():
+    """Get current webhook info"""
+    resp = http_requests.get(
+        f"https://api.telegram.org/bot{config.TELEGRAM_BOT_TOKEN}/getWebhookInfo",
+        timeout=10
+    )
+    return jsonify(resp.json())
 
 # Vercel handler
 if __name__ == '__main__':
