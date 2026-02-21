@@ -13,6 +13,8 @@ import hashlib
 import hmac
 import time
 from typing import Dict, List, Optional
+from functools import wraps
+from collections import defaultdict
 
 from flask import Flask, request, jsonify, render_template_string, Response
 from flask_cors import CORS
@@ -76,6 +78,63 @@ class Config:
     MAX_UID = 99999
 
 config = Config()
+
+# ===============================
+# RATE LIMITING
+# ===============================
+
+_rate_limits = defaultdict(list)
+
+def check_rate_limit(key, max_requests=30, window_seconds=60):
+    now = time.time()
+    _rate_limits[key] = [t for t in _rate_limits[key] if now - t < window_seconds]
+    if len(_rate_limits[key]) >= max_requests:
+        return False
+    _rate_limits[key].append(now)
+    return True
+
+# ===============================
+# TELEGRAM AUTH DECORATOR
+# ===============================
+
+def require_telegram_auth(f):
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        data = request.get_json(silent=True) or {}
+        init_data = data.get('init_data') or request.args.get('init_data', '')
+        if not init_data:
+            return jsonify({"error": "Authentication required"}), 401
+        if not validate_telegram_init_data(init_data, config.TELEGRAM_BOT_TOKEN):
+            return jsonify({"error": "Invalid authentication"}), 403
+        return f(*args, **kwargs)
+    return decorated
+
+def require_admin_secret(f):
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        secret = request.args.get('secret', '')
+        if secret != os.environ.get('ADMIN_SECRET', 'craft-webhook-secret-2026'):
+            return jsonify({"error": "Unauthorized"}), 403
+        return f(*args, **kwargs)
+    return decorated
+
+# ===============================
+# SECURITY HEADERS
+# ===============================
+
+@app.after_request
+def add_security_headers(response):
+    response.headers['X-Content-Type-Options'] = 'nosniff'
+    response.headers['X-Frame-Options'] = 'DENY'
+    response.headers['X-XSS-Protection'] = '1; mode=block'
+    response.headers['Referrer-Policy'] = 'strict-origin-when-cross-origin'
+    return response
+
+@app.before_request
+def global_rate_limit():
+    ip = request.remote_addr
+    if not check_rate_limit(f'global:{ip}', 100, 60):
+        return jsonify({"error": "Rate limit exceeded"}), 429
 
 # ===============================
 # DATABASE (PostgreSQL/Supabase)
@@ -431,9 +490,26 @@ def init_database():
             VALUES ('SYSTEM', 'ADMIN', 'System', 'Admin', 'system_admin', 999999)
             """)
         
+        # Enable RLS on all tables to block anon access via Supabase REST API
+        rls_tables = ['users', 'referrals', 'pending_referrals', 'achievements', 'user_achievements',
+                      'offers', 'ai_conversations', 'user_ai_sessions', 'ai_knowledge_base',
+                      'ai_learned_facts', 'ai_usage_log', 'admin_audit_log', 'broadcast_history',
+                      'admin_messages', 'admin_settings', 'lessons', 'user_lessons',
+                      'applications', 'sos_requests', 'support_tickets', 'university_lessons']
+        for table in rls_tables:
+            try:
+                cur.execute(f"ALTER TABLE {table} ENABLE ROW LEVEL SECURITY")
+            except Exception:
+                conn.rollback()
+        for table in rls_tables:
+            try:
+                cur.execute(f"DO $$ BEGIN CREATE POLICY deny_anon_{table} ON {table} FOR ALL TO anon USING (false); EXCEPTION WHEN duplicate_object THEN NULL; END $$")
+            except Exception:
+                conn.rollback()
+
         conn.commit()
         conn.close()
-        logger.info("✅ Database initialized")
+        logger.info("✅ Database initialized with RLS")
     except Exception as e:
         logger.error(f"DB init failed: {e}")
 
@@ -1814,8 +1890,15 @@ async function loadAchievements() {
 /* ============ UTILS ============ */
 async function api(url, body, method) {
   method = method || (body ? 'POST' : 'GET');
+  const initData = (tg && tg.initData) ? tg.initData : '';
+  if (method === 'GET' && initData) {
+    url += (url.includes('?') ? '&' : '?') + 'init_data=' + encodeURIComponent(initData);
+  }
   const opts = { method, headers: { 'Content-Type': 'application/json' } };
-  if (body && method !== 'GET') opts.body = JSON.stringify(body);
+  if (body && method !== 'GET') {
+    if (initData) body.init_data = initData;
+    opts.body = JSON.stringify(body);
+  }
   const r = await fetch(API + url, opts);
   return r.json();
 }
@@ -1894,19 +1977,13 @@ def home():
     return resp
 
 @app.route('/api/init', methods=['POST'])
+@require_telegram_auth
 def api_init():
     try:
         data = request.get_json() or {}
         telegram_id = data.get('telegram_id', '')
         if not telegram_id:
             return jsonify({"success": False, "error": "Telegram ID required"}), 400
-        
-        # Validate Telegram initData if provided (skip for demo users)
-        init_data = data.get('init_data', '')
-        if init_data and config.TELEGRAM_BOT_TOKEN:
-            if not validate_telegram_init_data(init_data, config.TELEGRAM_BOT_TOKEN):
-                logger.warning(f"Invalid initData from telegram_id={telegram_id}")
-                return jsonify({"success": False, "error": "Invalid authentication data"}), 403
         
         user = get_user(telegram_id)
         if user:
@@ -1937,6 +2014,7 @@ def api_init():
         return jsonify({"success": False, "error": "Initialization failed"}), 500
 
 @app.route('/api/ai/chat', methods=['POST'])
+@require_telegram_auth
 def api_ai_chat():
     try:
         data = request.get_json() or {}
@@ -1944,6 +2022,8 @@ def api_ai_chat():
         message = data.get('message', '').strip()
         if not telegram_id or not message:
             return jsonify({"success": False, "error": "Telegram ID and message required"}), 400
+        if not check_rate_limit(f'ai:{telegram_id}', 10, 60):
+            return jsonify({"success": False, "error": "Слишком много запросов. Подождите минуту."}), 429
         user = get_user(telegram_id)
         if not user:
             return jsonify({"success": False, "error": "User not found"}), 404
@@ -1954,6 +2034,7 @@ def api_ai_chat():
         return jsonify({"success": False, "error": "AI chat temporarily unavailable"}), 500
 
 @app.route('/api/check-subscription', methods=['POST'])
+@require_telegram_auth
 def api_check_subscription():
     try:
         data = request.get_json() or {}
@@ -1978,6 +2059,7 @@ def api_offers():
         return jsonify({"success": False, "error": "Failed to load offers"}), 500
 
 @app.route('/api/application/submit', methods=['POST'])
+@require_telegram_auth
 def api_submit_application():
     try:
         data = request.get_json() or {}
@@ -2019,6 +2101,7 @@ def api_submit_application():
         return jsonify({"success": False, "error": "Failed to submit"}), 500
 
 @app.route('/api/sos/submit', methods=['POST'])
+@require_telegram_auth
 def api_submit_sos():
     try:
         data = request.get_json() or {}
@@ -2048,6 +2131,7 @@ def api_submit_sos():
         return jsonify({"success": False, "error": "Failed to submit SOS"}), 500
 
 @app.route('/api/support/submit', methods=['POST'])
+@require_telegram_auth
 def api_submit_support():
     try:
         data = request.get_json() or {}
@@ -2075,6 +2159,7 @@ def api_submit_support():
         return jsonify({"success": False, "error": "Failed to submit"}), 500
 
 @app.route('/api/university/lessons', methods=['GET'])
+@require_telegram_auth
 def api_university_lessons():
     try:
         conn = get_db()
@@ -2087,6 +2172,7 @@ def api_university_lessons():
         return jsonify({"success": False, "error": "Failed to load lessons"}), 500
 
 @app.route('/api/user/profile', methods=['GET'])
+@require_telegram_auth
 def api_user_profile():
     try:
         telegram_id = request.args.get('telegram_id', '')
@@ -2125,6 +2211,7 @@ def api_user_profile():
         return jsonify({"success": False, "error": "Failed to load profile"}), 500
 
 @app.route('/api/referral/stats', methods=['GET'])
+@require_telegram_auth
 def api_referral_stats():
     try:
         telegram_id = request.args.get('telegram_id', '')
@@ -2157,6 +2244,7 @@ def api_referral_stats():
         return jsonify({"success": False, "error": str(e)}), 500
 
 @app.route('/api/achievements/all', methods=['GET'])
+@require_telegram_auth
 def api_achievements_all():
     try:
         telegram_id = request.args.get('telegram_id', '')
@@ -2480,6 +2568,7 @@ def bot_webhook():
         return jsonify({'ok': False, 'error': str(e)}), 500
 
 @app.route('/api/bot/set-webhook', methods=['GET'])
+@require_admin_secret
 def set_webhook():
     """Set Telegram webhook URL"""
     webhook_url = "https://craft-main-app.vercel.app/api/bot/webhook"
@@ -2491,6 +2580,7 @@ def set_webhook():
     return jsonify(resp.json())
 
 @app.route('/api/bot/webhook-info', methods=['GET'])
+@require_admin_secret
 def webhook_info():
     """Get current webhook info"""
     resp = http_requests.get(
@@ -2500,6 +2590,7 @@ def webhook_info():
     return jsonify(resp.json())
 
 @app.route('/api/migrate', methods=['GET'])
+@require_admin_secret
 def run_migration():
     """Run database migrations"""
     try:
