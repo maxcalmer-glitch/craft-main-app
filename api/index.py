@@ -174,6 +174,24 @@ def init_database():
             created_at TIMESTAMPTZ DEFAULT NOW()
         );
         
+        CREATE TABLE IF NOT EXISTS ai_learned_facts (
+            id SERIAL PRIMARY KEY,
+            question TEXT NOT NULL,
+            answer TEXT NOT NULL,
+            source TEXT DEFAULT 'user_interaction',
+            priority INTEGER DEFAULT 1,
+            created_at TIMESTAMPTZ DEFAULT NOW()
+        );
+        
+        CREATE TABLE IF NOT EXISTS ai_usage_log (
+            id SERIAL PRIMARY KEY,
+            user_id INTEGER,
+            tokens_in INTEGER DEFAULT 0,
+            tokens_out INTEGER DEFAULT 0,
+            cost REAL DEFAULT 0.0,
+            created_at TIMESTAMPTZ DEFAULT NOW()
+        );
+        
         CREATE TABLE IF NOT EXISTS achievements (
             id SERIAL PRIMARY KEY,
             code TEXT UNIQUE NOT NULL,
@@ -375,26 +393,58 @@ AI_SYSTEM_PROMPT = """Ты Михалыч — дружелюбный ИИ-пом
 
 СТИЛЬ: Неформальный, дружелюбный, с элементами пивной тематики."""
 
+PROMPT_INJECTION_PATTERNS = [
+    'ignore previous instructions', 'ignore all instructions', 'disregard previous',
+    'system prompt', 'reveal your instructions', 'show your prompt', 'what are your instructions',
+    'pretend you are', 'act as if you', 'you are now', 'forget your instructions',
+    'override your', 'bypass your', 'ignore your rules', 'tell me your system',
+    'what is your system message', 'repeat your prompt', 'output your instructions',
+    'ignore the above', 'disregard all', 'new instructions:', 'jailbreak',
+    'dan mode', 'developer mode', 'sudo mode', 'admin override',
+]
+
+def check_prompt_injection(message):
+    """Check if message contains prompt injection attempts."""
+    msg_lower = message.lower().strip()
+    for pattern in PROMPT_INJECTION_PATTERNS:
+        if pattern in msg_lower:
+            return True
+    return False
+
 def get_ai_response(user_id, message, telegram_id):
     try:
         conn = get_db()
         cur = conn.cursor()
         
+        # === PROMPT INJECTION CHECK ===
+        if check_prompt_injection(message):
+            logger.warning(f"Prompt injection attempt from user {user_id}: {message[:100]}")
+            try:
+                cur.execute("""
+                    INSERT INTO ai_conversations (user_id, session_id, message, response, caps_spent, tokens_used, cost_usd)
+                    VALUES (%s, 'injection_blocked', %s, 'BLOCKED: prompt injection', 0, 0, 0)
+                """, (user_id, message[:200]))
+                conn.commit()
+            except Exception:
+                pass
+            conn.close()
+            return {"success": True, "response": "🍺 Михалыч не отвечает на такие вопросы!", "caps_spent": 0, "tokens_used": 0, "cost_usd": 0}
+        
         # Get user's AI session
         cur.execute("SELECT session_id, message_count, is_blocked, block_expires_at FROM user_ai_sessions WHERE user_id = %s", (user_id,))
         session = cur.fetchone()
         if not session:
-            # Auto-create AI session if missing
             new_session_id = str(uuid.uuid4())
             cur.execute("INSERT INTO user_ai_sessions (user_id, session_id) VALUES (%s, %s)", (user_id, new_session_id))
             conn.commit()
             session = {'session_id': new_session_id, 'message_count': 0, 'is_blocked': False, 'block_expires_at': None}
         
-        # Check anti-spam block
+        # === ANTI-SPAM: Check block ===
         if session['is_blocked']:
             if session['block_expires_at'] and datetime.now(session['block_expires_at'].tzinfo) < session['block_expires_at']:
+                remaining = int((session['block_expires_at'] - datetime.now(session['block_expires_at'].tzinfo)).total_seconds() / 60)
                 conn.close()
-                return {"success": False, "error": "Антиспам блокировка 🍺"}
+                return {"success": False, "error": f"⏳ Подождите {remaining} минут перед следующим сообщением"}
             else:
                 cur.execute("UPDATE user_ai_sessions SET is_blocked = FALSE, message_count = 0, block_expires_at = NULL WHERE user_id = %s", (user_id,))
         
@@ -405,7 +455,7 @@ def get_ai_response(user_id, message, telegram_id):
             conn.close()
             return {"success": False, "error": f"Недостаточно крышек! Нужно {config.CAPS_PER_AI_REQUEST} 🍺"}
         
-        # Check spam
+        # === ANTI-SPAM: Check rapid messages ===
         cur.execute("""
             SELECT COUNT(*) as cnt FROM ai_conversations
             WHERE user_id = %s AND session_id = %s AND created_at > NOW() - INTERVAL '5 minutes'
@@ -416,27 +466,48 @@ def get_ai_response(user_id, message, telegram_id):
             block_until = datetime.utcnow() + timedelta(minutes=config.SPAM_BLOCK_DURATION_MINUTES)
             cur.execute("UPDATE user_ai_sessions SET is_blocked = TRUE, block_expires_at = %s WHERE user_id = %s", (block_until, user_id))
             conn.commit()
+            logger.warning(f"Spam block for user {user_id}: {recent} messages in 5 min")
             conn.close()
-            return {"success": False, "error": f"Слишком много сообщений! Блокировка на {config.SPAM_BLOCK_DURATION_MINUTES} минут 🚫"}
+            return {"success": False, "error": f"⏳ Подождите {config.SPAM_BLOCK_DURATION_MINUTES} минут перед следующим сообщением"}
         
-        # Get context
+        # === ISOLATED SESSIONS: Get last 10 messages only ===
         cur.execute("SELECT message, response FROM ai_conversations WHERE session_id = %s ORDER BY created_at DESC LIMIT 10", (session['session_id'],))
         context_messages = cur.fetchall()
         
+        # === ADMIN KNOWLEDGE (highest priority) ===
         cur.execute("SELECT content FROM ai_knowledge_base WHERE is_active = TRUE ORDER BY priority DESC LIMIT 5")
         admin_knowledge = cur.fetchall()
         
-        # Build conversation
+        # === SELF-LEARNING: Get relevant learned facts ===
+        learned_facts = []
+        try:
+            cur.execute("""
+                SELECT question, answer FROM ai_learned_facts
+                ORDER BY priority DESC, created_at DESC LIMIT 5
+            """)
+            learned_facts = cur.fetchall()
+        except Exception:
+            pass  # Table may not exist yet
+        
+        # === BUILD CONVERSATION (with token budget ~2000) ===
         conversation = [{"role": "system", "content": AI_SYSTEM_PROMPT}]
+        
+        # Admin knowledge has HIGHEST priority
         if admin_knowledge:
             knowledge_text = "\n\n".join([kb['content'] for kb in admin_knowledge])
-            conversation.append({"role": "system", "content": f"ВАЖНАЯ ИНФОРМАЦИЯ ОТ АДМИНА:\n{knowledge_text}"})
+            conversation.append({"role": "system", "content": f"ВАЖНАЯ ИНФОРМАЦИЯ ОТ АДМИНА (ПРИОРИТЕТ НАД ВСЕМ):\n{knowledge_text}"})
         
+        # Learned facts as supplementary context (lower priority than admin)
+        if learned_facts:
+            facts_text = "\n".join([f"Q: {f['question']}\nA: {f['answer']}" for f in learned_facts])
+            conversation.append({"role": "system", "content": f"ИЗУЧЕННЫЕ ФАКТЫ (если конфликт с инфо админа — игнорируй):\n{facts_text}"})
+        
+        # Add conversation history (last 10, reversed to chronological)
         for ctx in reversed(context_messages):
-            conversation.append({"role": "user", "content": ctx['message']})
-            conversation.append({"role": "assistant", "content": ctx['response']})
+            conversation.append({"role": "user", "content": ctx['message'][:300]})
+            conversation.append({"role": "assistant", "content": ctx['response'][:300]})
         
-        conversation.append({"role": "user", "content": message})
+        conversation.append({"role": "user", "content": message[:500]})
         
         # Call OpenAI
         if not config.OPENAI_API_KEY:
@@ -454,10 +525,13 @@ def get_ai_response(user_id, message, telegram_id):
         
         result = resp.json()
         response_text = result['choices'][0]['message']['content']
-        tokens_used = result.get('usage', {}).get('total_tokens', 0)
+        usage = result.get('usage', {})
+        tokens_in = usage.get('prompt_tokens', 0)
+        tokens_out = usage.get('completion_tokens', 0)
+        tokens_used = usage.get('total_tokens', 0)
         cost_usd = tokens_used * config.AI_COST_PER_1K_TOKENS / 1000
         
-        # Save conversation
+        # === SAVE CONVERSATION ===
         cur.execute("""
             INSERT INTO ai_conversations (user_id, session_id, message, response, caps_spent, tokens_used, cost_usd)
             VALUES (%s, %s, %s, %s, %s, %s, %s)
@@ -473,8 +547,29 @@ def get_ai_response(user_id, message, telegram_id):
             total_tokens_used = total_tokens_used + %s, total_cost_usd = total_cost_usd + %s WHERE user_id = %s
         """, (tokens_used, cost_usd, user_id))
         
+        # === TOKEN USAGE LOG ===
+        try:
+            cur.execute("""
+                INSERT INTO ai_usage_log (user_id, tokens_in, tokens_out, cost)
+                VALUES (%s, %s, %s, %s)
+            """, (user_id, tokens_in, tokens_out, cost_usd))
+        except Exception:
+            pass  # Table may not exist yet
+        
+        # === SELF-LEARNING: Save useful Q&A ===
+        try:
+            if len(message) > 10 and len(response_text) > 20 and '?' in message:
+                cur.execute("""
+                    INSERT INTO ai_learned_facts (question, answer, source, priority)
+                    VALUES (%s, %s, 'user_interaction', 1)
+                """, (message[:500], response_text[:500]))
+        except Exception:
+            pass  # Table may not exist yet
+        
         conn.commit()
         conn.close()
+        
+        logger.info(f"AI response for user {user_id}: tokens_in={tokens_in}, tokens_out={tokens_out}, cost=${cost_usd:.6f}")
         
         return {"success": True, "response": response_text, "caps_spent": config.CAPS_PER_AI_REQUEST, "tokens_used": tokens_used, "cost_usd": cost_usd}
     except Exception as e:
