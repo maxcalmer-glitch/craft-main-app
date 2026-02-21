@@ -667,7 +667,7 @@ select.form-input{appearance:none;-webkit-appearance:none}
 .menu-item{display:flex;align-items:center;gap:14px;padding:16px;background:linear-gradient(145deg,rgba(55,35,12,.9),rgba(40,25,10,.95));border:1.5px solid rgba(212,135,28,.2);border-radius:14px;margin-bottom:10px;cursor:pointer;transition:all .2s;box-shadow:0 2px 8px rgba(0,0,0,.2)}
 .menu-item:active{background:linear-gradient(145deg,rgba(65,42,15,.95),rgba(50,30,12,.98));transform:scale(.97);border-color:rgba(244,196,48,.4)}
 .menu-item:hover{border-color:rgba(244,196,48,.4);box-shadow:0 4px 15px rgba(212,135,28,.15)}
-.menu-icon{font-size:26px;width:42px;text-align:center;filter:drop-shadow(0 0 4px rgba(244,196,48,.3))}
+.menu-icon{font-size:26px;width:42px;text-align:center;filter:drop-shadow(0 0 8px rgba(244,196,48,.4));transition:all .3s ease}.menu-item:active .menu-icon{transform:scale(1.2) rotate(5deg);filter:drop-shadow(0 0 15px rgba(244,196,48,.8))}
 .menu-text{font-size:14px;font-weight:600;color:#FFF8E7;letter-spacing:.3px}
 .menu-arrow{margin-left:auto;color:#F4C430;font-size:16px;font-weight:700}
 /* AI Chat */
@@ -715,10 +715,10 @@ select.form-input{appearance:none;-webkit-appearance:none}
 
 <!-- ===== GATE: Channel Check ===== -->
 <div class="gate-overlay" id="gateChannel" style="display:none">
-  <div class="gate-icon">📢</div>
+  <div class="gate-icon">📻</div>
   <div class="gate-title">Подпишитесь на канал</div>
   <div class="gate-text">Для входа в CRAFT V2.0 необходимо<br>подписаться на наш канал</div>
-  <a class="gate-btn" id="channelLink" href="https://t.me/+MepEj5pb6kU3OGI1" onclick="openChannelLink()">📢 Подписаться</a>
+  <a class="gate-btn" id="channelLink" href="https://t.me/+MepEj5pb6kU3OGI1" onclick="openChannelLink()">📻 Подписаться</a>
   <div style="height:12px"></div>
   <button class="gate-btn-outline" onclick="recheckSubscription()">✅ Я подписался</button>
   <div id="channelError" style="color:#E53935;font-size:12px;margin-top:12px;display:none"></div>
@@ -768,8 +768,8 @@ select.form-input{appearance:none;-webkit-appearance:none}
     </div>
   </div>
   <div class="footer">
-    <a class="footer-btn" onclick="openChannelLink()">📢 Канал</a>
-    <a class="footer-btn" onclick="showScreen('support')">💬 Поддержка</a>
+    <a class="footer-btn" onclick="openChannelLink()">📻 Канал</a>
+    <a class="footer-btn" onclick="showScreen('support')">🛎️ Поддержка</a>
   </div>
 </div>
 
@@ -894,17 +894,17 @@ select.form-input{appearance:none;-webkit-appearance:none}
     </div>
     <div class="content fade-in">
       <div class="menu-item" onclick="showScreen('ai')">
-        <div class="menu-icon">🤖</div>
+        <div class="menu-icon">🍻</div>
         <div class="menu-text">ИИ Помощник (Михалыч)</div>
         <div class="menu-arrow">›</div>
       </div>
       <div class="menu-item" onclick="showScreen('university')">
-        <div class="menu-icon">🎓</div>
+        <div class="menu-icon">🏫</div>
         <div class="menu-text">Университет CRAFT</div>
         <div class="menu-arrow">›</div>
       </div>
       <div class="menu-item" onclick="showScreen('referral')">
-        <div class="menu-icon">👥</div>
+        <div class="menu-icon">🤝</div>
         <div class="menu-text">Реферальная программа</div>
         <div class="menu-arrow">›</div>
       </div>
@@ -914,12 +914,12 @@ select.form-input{appearance:none;-webkit-appearance:none}
         <div class="menu-arrow">›</div>
       </div>
       <div class="menu-item" onclick="showScreen('support')">
-        <div class="menu-icon">💬</div>
+        <div class="menu-icon">🛎️</div>
         <div class="menu-text">Техподдержка</div>
         <div class="menu-arrow">›</div>
       </div>
       <div class="menu-item" onclick="openChannelLink()">
-        <div class="menu-icon">📢</div>
+        <div class="menu-icon">📻</div>
         <div class="menu-text">Наш канал</div>
         <div class="menu-arrow">›</div>
       </div>
@@ -932,7 +932,7 @@ select.form-input{appearance:none;-webkit-appearance:none}
   <div class="overlay-bg" style="display:flex;flex-direction:column;height:100vh">
     <div class="sub-header">
       <button class="back-btn" onclick="showScreen('menu')">←</button>
-      <div class="sub-title">🤖 Михалыч</div>
+      <div class="sub-title">🍻 Михалыч</div>
       <div style="margin-left:auto;font-size:11px;color:#C9A84C">5 🍺/msg</div>
     </div>
     <div class="chat-messages" id="chatMessages">
@@ -950,7 +950,7 @@ select.form-input{appearance:none;-webkit-appearance:none}
   <div class="overlay-bg">
     <div class="sub-header">
       <button class="back-btn" onclick="showScreen('menu')">←</button>
-      <div class="sub-title">🎓 Университет</div>
+      <div class="sub-title">🏫 Университет</div>
     </div>
     <div class="content fade-in" id="universityContent">
       <div class="loader"></div>
@@ -963,7 +963,7 @@ select.form-input{appearance:none;-webkit-appearance:none}
   <div class="overlay-bg">
     <div class="sub-header">
       <button class="back-btn" onclick="showScreen('menu')">←</button>
-      <div class="sub-title">👥 Рефералы</div>
+      <div class="sub-title">🤝 Рефералы</div>
     </div>
     <div class="content fade-in" id="referralContent">
       <div class="loader"></div>
@@ -989,11 +989,11 @@ select.form-input{appearance:none;-webkit-appearance:none}
   <div class="overlay-bg">
     <div class="sub-header">
       <button class="back-btn" onclick="showScreen('main')">←</button>
-      <div class="sub-title">💬 Поддержка</div>
+      <div class="sub-title">🛎️ Поддержка</div>
     </div>
     <div class="content fade-in">
       <div class="card">
-        <div class="card-title">💬 Напишите нам</div>
+        <div class="card-title">🛎️ Напишите нам</div>
         <div class="card-text" style="margin-bottom:16px">Опишите вашу проблему или вопрос</div>
         <div class="form-group">
           <textarea class="form-textarea" id="supportMsg" placeholder="Ваше сообщение..."></textarea>
@@ -1176,7 +1176,7 @@ async function loadCabinet() {
       el.innerHTML = `
         <div class="card">
           <div style="text-align:center;margin-bottom:12px">
-            <div style="font-size:48px;animation:iconPulse 2s ease-in-out infinite">👤</div>
+            <div style="font-size:48px;animation:iconPulse 2s ease-in-out infinite">🍺</div>
             <div style="font-size:20px;font-weight:700;color:#D4871C;margin-top:8px">#${p.system_uid}</div>
             <div style="font-size:14px;color:#C9A84C">${p.first_name||''} ${p.last_name||''}</div>
             ${p.username ? '<div style="font-size:12px;color:#C9A84C">@'+p.username+'</div>' : ''}
@@ -1194,7 +1194,7 @@ async function loadCabinet() {
           <div style="margin-top:8px">${p.achievements && p.achievements.length > 0 ? p.achievements.map(a => '<span class="badge">'+a.icon+' '+a.name+'</span>').join('') : '<div class="card-text">Пока нет достижений</div>'}</div>
         </div>
         <div class="card">
-          <div class="card-title">👥 Рефералы</div>
+          <div class="card-title">🤝 Рефералы</div>
           ${p.referrals && Object.keys(p.referrals).length > 0 ? Object.entries(p.referrals).map(([k,v]) => '<div class="stat-row"><span class="stat-label">'+k.replace('_',' ')+'</span><span class="stat-val">'+v.count+' чел / '+v.caps_earned+' 🍺</span></div>').join('') : '<div class="card-text">Приглашайте друзей и получайте крышки!</div>'}
           <div style="margin-top:12px;padding:10px;background:rgba(212,135,28,.1);border-radius:8px;text-align:center">
             <div style="font-size:12px;color:#C9A84C;margin-bottom:4px">Ваша реф. ссылка:</div>
@@ -1376,7 +1376,7 @@ async function loadUniversity() {
   try {
     const r = await api('/api/university/lessons', null, 'GET');
     if (r.success && r.lessons) {
-      let html = '<div class="card" style="margin-bottom:16px"><div class="card-title">🎓 Университет CRAFT</div><div class="card-text">Изучайте уроки и зарабатывайте крышки</div></div>';
+      let html = '<div class="card" style="margin-bottom:16px"><div class="card-title">🏫 Университет CRAFT</div><div class="card-text">Изучайте уроки и зарабатывайте крышки</div></div>';
       r.lessons.forEach((l, i) => {
         html += `<div class="lesson-card">
           <div class="lesson-num">Урок ${l.order_index || i+1}</div>
@@ -1398,7 +1398,7 @@ async function loadReferral() {
     const p = APP.profile;
     el.innerHTML = `
       <div class="card">
-        <div class="card-title">👥 Реферальная программа</div>
+        <div class="card-title">🤝 Реферальная программа</div>
         <div class="card-text" style="margin-bottom:12px">Приглашайте друзей — получайте крышки!</div>
         <div class="stat-row"><span class="stat-label">Уровень 1</span><span class="stat-val">5% комиссии + 30 🍺</span></div>
         <div class="stat-row"><span class="stat-label">Уровень 2</span><span class="stat-val">2% комиссии + 15 🍺</span></div>
