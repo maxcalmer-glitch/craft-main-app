@@ -250,8 +250,7 @@ def init_database():
             created_at TIMESTAMPTZ DEFAULT NOW()
         );
         
-        DROP TABLE IF EXISTS pending_referrals;
-        CREATE TABLE pending_referrals (
+        CREATE TABLE IF NOT EXISTS pending_referrals (
             id SERIAL PRIMARY KEY,
             referred_user_id TEXT NOT NULL,
             referrer_id TEXT NOT NULL,
