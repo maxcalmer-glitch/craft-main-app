@@ -257,8 +257,8 @@ def init_database():
             cur.execute("""
             INSERT INTO achievements (code, name, description, icon, reward_caps) VALUES
             ('first_beer', '🍺 Первая кружка', 'Зарегистрироваться в системе', '🍺', 50),
-            ('bartender', '🍻 Начинающий бармен', 'Пригласить первого реферала', '🍻', 100),
-            ('master_brewer', '👨‍🍳 Мастер-пивовар', 'Пригласить 5 рефералов', '👨‍🍳', 200),
+            ('bartender', '🤝 Первый друг', 'Пригласить первого реферала (+30 крышек)', '🍻', 30),
+            ('master_brewer', '👨‍🏫 Мастер рефералов', 'Пригласить 5 рефералов (+150 крышек)', '👨‍🍳', 150),
             ('university_grad', '🎓 Выпускник университета', 'Пройти все уроки', '🎓', 150),
             ('quiz_master', '🧠 Знаток пива', 'Сдать все экзамены на отлично', '🧠', 100),
             ('social_butterfly', '🦋 Душа компании', 'Пригласить 10 рефералов', '🦋', 300),
@@ -1703,6 +1703,18 @@ def api_submit_application():
         conn.close()
         
         msg = f"📋 <b>НОВАЯ ЗАЯВКА</b>\n👤 {user['first_name']} {user.get('last_name','')}\n🆔 #{user['system_uid']}\n💬 @{user.get('username','N/A')}"
+        
+        # Add referrer info
+        if user.get('referrer_id'):
+            conn2 = get_db()
+            cur2 = conn2.cursor()
+            cur2.execute("SELECT first_name, username, system_uid FROM users WHERE id = %s", (user['referrer_id'],))
+            ref_user = cur2.fetchone()
+            conn2.close()
+            if ref_user:
+                ref_display = f"@{ref_user['username']}" if ref_user.get('username') else ref_user['first_name']
+                msg += f"\n🤝 <b>Привел:</b> {ref_display} (#{ref_user['system_uid']})"
+        
         for k,v in form_data.items():
             msg += f"\n• <b>{k}:</b> {v}"
         send_to_admin_chat(config.ADMIN_CHAT_APPLICATIONS, msg)
