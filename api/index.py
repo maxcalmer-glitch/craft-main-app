@@ -567,57 +567,73 @@ MAIN_HTML = r"""<!DOCTYPE html>
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
-body{background:linear-gradient(135deg,#1A1209 0%,#2C1F0E 50%,#1A1209 100%);color:#FFF8E7;font-family:system-ui,sans-serif;min-height:100vh;overflow-x:hidden;position:relative}
-/* Beer Bubbles Background */
+body{background:#1A1209;color:#FFF8E7;font-family:'Georgia',serif;min-height:100vh;overflow-x:hidden;position:relative}
+body::before{content:'';position:fixed;top:0;left:0;width:100%;height:100%;background:linear-gradient(180deg,#1A1209 0%,#2A1A0A 30%,#1E1308 60%,#0F0A04 100%);z-index:0;pointer-events:none}
+/* ✨ БЛЕСТЯЩИЕ ПИВНЫЕ ПУЗЫРЬКИ */
 .bubbles{position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:0;overflow:hidden}
-.bubble{position:absolute;bottom:-20px;background:radial-gradient(circle at 30% 30%,rgba(212,175,55,.15),rgba(212,135,28,.05));border-radius:50%;animation:bubbleRise linear infinite}
-@keyframes bubbleRise{0%{transform:translateY(0) scale(1);opacity:.6}50%{opacity:.3}100%{transform:translateY(-110vh) scale(.3);opacity:0}}
+.bubble{position:absolute;bottom:-30px;border-radius:50%;animation:bubbleRise linear infinite,bubbleSparkle 2s ease-in-out infinite,bubbleWobble 3s ease-in-out infinite;
+  background:radial-gradient(circle at 30% 30%,rgba(255,248,200,0.9) 0%,rgba(244,196,48,0.7) 20%,rgba(212,135,28,0.5) 50%,rgba(184,134,11,0.3) 75%,transparent 100%);
+  box-shadow:inset 0 0 8px rgba(255,248,231,0.7),0 0 15px rgba(244,196,48,0.5),0 0 30px rgba(212,135,28,0.3),0 0 45px rgba(184,115,51,0.15);
+  backdrop-filter:blur(1px)}
+.bubble::after{content:'';position:absolute;top:15%;left:20%;width:35%;height:25%;background:radial-gradient(ellipse,rgba(255,255,255,0.8) 0%,transparent 70%);border-radius:50%;transform:rotate(-30deg)}
+@keyframes bubbleRise{0%{transform:translateY(0) translateX(0) scale(1);opacity:0}5%{opacity:0.8}50%{transform:translateY(-55vh) translateX(15px) scale(0.85);opacity:0.6}100%{transform:translateY(-115vh) translateX(-10px) scale(0.3);opacity:0}}
+@keyframes bubbleSparkle{0%,100%{filter:brightness(1) drop-shadow(0 0 4px rgba(244,196,48,0.4))}25%{filter:brightness(1.4) drop-shadow(0 0 8px rgba(244,196,48,0.7))}50%{filter:brightness(1.6) saturate(1.3) drop-shadow(0 0 12px rgba(255,215,0,0.8))}75%{filter:brightness(1.2) drop-shadow(0 0 6px rgba(212,175,55,0.5))}}
+@keyframes bubbleWobble{0%,100%{transform:translateX(0)}33%{transform:translateX(8px)}66%{transform:translateX(-6px)}}
 .screen,.overlay,.gate-overlay{position:relative;z-index:1}
 .screen{display:none;flex-direction:column;min-height:100vh;width:100%}
 .screen.active{display:flex}
-/* Header */
-.header{background:rgba(42,30,18,.9);padding:20px 16px;text-align:center;border-bottom:1px solid rgba(212,135,28,.2)}
-.uid{font-size:18px;font-weight:700;color:#D4871C;margin-bottom:8px}
-.balance{font-size:14px;color:#C9A84C}
+/* Header — Барная стойка */
+.header{background:linear-gradient(180deg,rgba(35,22,10,.98) 0%,rgba(50,30,12,.95) 100%);padding:22px 16px;text-align:center;border-bottom:2px solid rgba(212,135,28,.4);box-shadow:0 4px 20px rgba(0,0,0,.5);position:relative}
+.header::after{content:'';position:absolute;bottom:-2px;left:10%;width:80%;height:2px;background:linear-gradient(90deg,transparent,#F4C430,#D4871C,#F4C430,transparent)}
+.uid{font-size:20px;font-weight:700;color:#F4C430;margin-bottom:6px;text-shadow:0 0 10px rgba(244,196,48,.4);letter-spacing:1px;font-family:'Georgia',serif}
+.balance{font-size:14px;color:#C9A84C;text-shadow:0 0 5px rgba(201,168,76,.3)}
 /* Grid */
 .main-grid{flex:1;display:grid;grid-template-columns:1fr 1fr;gap:16px;padding:24px 16px;max-width:400px;margin:0 auto;width:100%}
-.main-block{background:rgba(42,30,18,.9);border:1px solid rgba(212,135,28,.2);border-radius:16px;padding:24px 16px;text-align:center;cursor:pointer;transition:all .3s;min-height:120px;display:flex;flex-direction:column;justify-content:center;-webkit-tap-highlight-color:transparent}
-.main-block:active{transform:scale(.96)}
-.block-icon{font-size:36px;margin-bottom:8px;display:inline-block;animation:iconPulse 2s ease-in-out infinite}
-.block-title{font-size:15px;font-weight:600;color:#D4871C}
-.sos-block{background:rgba(198,40,40,.15)!important;border-color:rgba(198,40,40,.4)!important}
+/* Карточки — пивные подставки */
+.main-block{background:linear-gradient(145deg,rgba(60,40,15,.95),rgba(40,25,10,.98));border:2px solid rgba(212,135,28,.35);border-radius:18px;padding:24px 16px;text-align:center;cursor:pointer;transition:all .3s;min-height:130px;display:flex;flex-direction:column;justify-content:center;-webkit-tap-highlight-color:transparent;box-shadow:0 4px 15px rgba(0,0,0,.4),inset 0 1px 0 rgba(212,175,55,.15);position:relative;overflow:hidden}
+.main-block::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(244,196,48,.5),transparent)}
+.main-block::after{content:'';position:absolute;bottom:0;left:15%;right:15%;height:1px;background:linear-gradient(90deg,transparent,rgba(184,115,51,.4),transparent)}
+.main-block:active{transform:scale(.95);box-shadow:0 2px 8px rgba(0,0,0,.6)}
+.main-block:hover{border-color:rgba(244,196,48,.6);box-shadow:0 6px 25px rgba(212,135,28,.25),inset 0 1px 0 rgba(244,196,48,.3);transform:translateY(-2px)}
+.block-icon{font-size:40px;margin-bottom:10px;display:inline-block}
+.block-title{font-size:15px;font-weight:700;color:#F4C430;letter-spacing:.5px;text-shadow:0 0 8px rgba(244,196,48,.3)}
+.sos-block{background:linear-gradient(145deg,rgba(80,20,15,.9),rgba(50,15,10,.95))!important;border-color:rgba(198,40,40,.5)!important;box-shadow:0 4px 15px rgba(198,40,40,.2),inset 0 1px 0 rgba(255,100,80,.1)!important}
 .sos-block .block-icon{animation:sosPulse 1.5s ease-in-out infinite}
-/* Footer */
-.footer{display:flex;justify-content:space-between;padding:16px;background:rgba(42,30,18,.9);border-top:1px solid rgba(212,135,28,.2)}
-.footer-btn{padding:8px 16px;background:rgba(212,135,28,.2);border:1px solid rgba(212,135,28,.4);border-radius:8px;color:#FFF8E7;text-decoration:none;font-size:12px;cursor:pointer;transition:all .2s}
-.footer-btn:active{background:rgba(212,135,28,.4)}
+.sos-block:hover{border-color:rgba(229,57,53,.7)!important;box-shadow:0 6px 25px rgba(198,40,40,.35)!important}
+/* Footer — нижняя барная полка */
+.footer{display:flex;justify-content:space-between;padding:16px;background:linear-gradient(180deg,rgba(35,22,10,.95),rgba(25,15,8,.98));border-top:2px solid rgba(212,135,28,.3);position:relative}
+.footer::before{content:'';position:absolute;top:-2px;left:10%;width:80%;height:2px;background:linear-gradient(90deg,transparent,rgba(244,196,48,.4),transparent)}
+.footer-btn{padding:10px 18px;background:linear-gradient(135deg,rgba(212,135,28,.15),rgba(184,115,51,.2));border:1px solid rgba(212,135,28,.4);border-radius:10px;color:#F4C430;text-decoration:none;font-size:12px;font-weight:600;cursor:pointer;transition:all .2s;letter-spacing:.3px}
+.footer-btn:active{background:linear-gradient(135deg,rgba(212,135,28,.35),rgba(184,115,51,.4));transform:scale(.95)}
 /* Animations */
-@keyframes iconPulse{0%,100%{transform:scale(1) rotate(0deg)}25%{transform:scale(1.1) rotate(-5deg)}50%{transform:scale(1.2) rotate(0deg)}75%{transform:scale(1.1) rotate(5deg)}}
-@keyframes sosPulse{0%,100%{transform:scale(1);opacity:1;filter:drop-shadow(0 0 4px rgba(198,40,40,.5))}50%{transform:scale(1.25);opacity:.85;filter:drop-shadow(0 0 12px rgba(198,40,40,.8))}}
+@keyframes iconFloat{0%,100%{transform:translateY(0) scale(1)}50%{transform:translateY(-5px) scale(1.05)}}
+@keyframes sosPulse{0%,100%{transform:scale(1);opacity:1;filter:drop-shadow(0 0 4px rgba(198,40,40,.5))}50%{transform:scale(1.2);opacity:.85;filter:drop-shadow(0 0 15px rgba(229,57,53,.8))}}
 @keyframes fadeIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
 @keyframes spin{to{transform:rotate(360deg)}}
-@keyframes beerGlow{0%,100%{filter:drop-shadow(0 0 3px rgba(212,135,28,.3))}50%{filter:drop-shadow(0 0 12px rgba(212,175,55,.6))}}
-@keyframes beerWiggle{0%,100%{transform:rotate(0deg) scale(1)}20%{transform:rotate(-12deg) scale(1.1)}40%{transform:rotate(8deg) scale(1.15)}60%{transform:rotate(-5deg) scale(1.1)}80%{transform:rotate(3deg) scale(1.05)}}
+@keyframes beerGlow{0%,100%{filter:drop-shadow(0 0 5px rgba(244,196,48,.3))}50%{filter:drop-shadow(0 0 15px rgba(244,196,48,.7)) drop-shadow(0 0 25px rgba(212,175,55,.3))}}
+@keyframes beerWiggle{0%,100%{transform:rotate(0deg) scale(1)}20%{transform:rotate(-12deg) scale(1.15)}40%{transform:rotate(8deg) scale(1.2)}60%{transform:rotate(-5deg) scale(1.1)}80%{transform:rotate(3deg) scale(1.05)}}
+@keyframes goldShimmer{0%{background-position:200% center}100%{background-position:-200% center}}
 .main-block:hover .block-icon,.main-block:active .block-icon{animation:beerWiggle .6s ease-in-out}
-.main-block{box-shadow:0 0 0 rgba(212,135,28,0);transition:all .3s,box-shadow .3s}
-.main-block:hover{box-shadow:0 0 20px rgba(212,135,28,.15);border-color:rgba(212,135,28,.5)}
-.block-icon{animation:iconPulse 2.5s ease-in-out infinite,beerGlow 3s ease-in-out infinite}
+.block-icon{animation:iconFloat 3s ease-in-out infinite,beerGlow 2.5s ease-in-out infinite}
 .fade-in{animation:fadeIn .3s ease}
 /* Overlay screens */
 .overlay{position:fixed;top:0;left:0;width:100%;height:100%;z-index:100;display:none;flex-direction:column}
 .overlay.active{display:flex}
-.overlay-bg{background:linear-gradient(135deg,#1A1209 0%,#2C1F0E 50%,#1A1209 100%);min-height:100vh}
+.overlay-bg{background:linear-gradient(180deg,#1A1209 0%,#2A1A0A 40%,#1E1308 100%);min-height:100vh}
 /* Sub-header */
-.sub-header{background:rgba(42,30,18,.95);padding:16px;display:flex;align-items:center;gap:12px;border-bottom:1px solid rgba(212,135,28,.2)}
-.back-btn{width:36px;height:36px;border-radius:50%;border:1px solid rgba(212,135,28,.4);background:rgba(212,135,28,.1);color:#D4871C;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center}
-.sub-title{font-size:18px;font-weight:700;color:#D4871C}
+.sub-header{background:linear-gradient(180deg,rgba(35,22,10,.98),rgba(45,28,12,.95));padding:16px;display:flex;align-items:center;gap:12px;border-bottom:2px solid rgba(212,135,28,.3);box-shadow:0 3px 15px rgba(0,0,0,.4);position:relative}
+.sub-header::after{content:'';position:absolute;bottom:-2px;left:10%;width:80%;height:2px;background:linear-gradient(90deg,transparent,rgba(244,196,48,.4),transparent)}
+.back-btn{width:38px;height:38px;border-radius:50%;border:1.5px solid rgba(244,196,48,.5);background:linear-gradient(135deg,rgba(212,135,28,.15),rgba(184,115,51,.1));color:#F4C430;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s}
+.back-btn:active{transform:scale(.9);background:rgba(212,135,28,.3)}
+.sub-title{font-size:18px;font-weight:700;color:#F4C430;text-shadow:0 0 8px rgba(244,196,48,.3);letter-spacing:.5px}
 /* Content */
 .content{flex:1;padding:16px;overflow-y:auto;-webkit-overflow-scrolling:touch}
-/* Cards */
-.card{background:rgba(42,30,18,.9);border:1px solid rgba(212,135,28,.2);border-radius:12px;padding:16px;margin-bottom:12px}
-.card-title{font-size:15px;font-weight:600;color:#D4871C;margin-bottom:8px}
-.card-text{font-size:13px;color:#C9A84C;line-height:1.5}
-.card-value{font-size:20px;font-weight:700;color:#FFF8E7}
+/* Cards — пивные подставки */
+.card{background:linear-gradient(145deg,rgba(55,35,12,.95),rgba(35,22,10,.98));border:1.5px solid rgba(212,135,28,.3);border-radius:14px;padding:18px;margin-bottom:14px;box-shadow:0 4px 12px rgba(0,0,0,.3),inset 0 1px 0 rgba(244,196,48,.1);position:relative}
+.card::before{content:'';position:absolute;top:0;left:10%;right:10%;height:1px;background:linear-gradient(90deg,transparent,rgba(244,196,48,.3),transparent)}
+.card-title{font-size:15px;font-weight:700;color:#F4C430;margin-bottom:8px;text-shadow:0 0 6px rgba(244,196,48,.2)}
+.card-text{font-size:13px;color:#C9A84C;line-height:1.6}
+.card-value{font-size:22px;font-weight:700;color:#FFF8E7;text-shadow:0 0 8px rgba(255,248,231,.2)}
 /* Stat row */
 .stat-row{display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid rgba(212,135,28,.1)}
 .stat-label{font-size:13px;color:#C9A84C}
@@ -625,56 +641,61 @@ body{background:linear-gradient(135deg,#1A1209 0%,#2C1F0E 50%,#1A1209 100%);colo
 /* Forms */
 .form-group{margin-bottom:14px}
 .form-label{display:block;font-size:13px;color:#C9A84C;margin-bottom:6px}
-.form-input,.form-textarea{width:100%;padding:12px;background:rgba(26,18,9,.8);border:1px solid rgba(212,135,28,.3);border-radius:10px;color:#FFF8E7;font-size:14px;outline:none;transition:border-color .2s}
-.form-input:focus,.form-textarea:focus{border-color:#D4871C}
+.form-input,.form-textarea{width:100%;padding:13px;background:rgba(20,12,5,.9);border:1.5px solid rgba(212,135,28,.25);border-radius:10px;color:#FFF8E7;font-size:14px;outline:none;transition:all .2s;box-shadow:inset 0 2px 4px rgba(0,0,0,.2)}
+.form-input:focus,.form-textarea:focus{border-color:#F4C430;box-shadow:inset 0 2px 4px rgba(0,0,0,.2),0 0 8px rgba(244,196,48,.2)}
 .form-textarea{min-height:100px;resize:vertical;font-family:inherit}
 select.form-input{appearance:none;-webkit-appearance:none}
-/* Buttons */
-.btn{width:100%;padding:14px;border-radius:12px;border:none;font-size:15px;font-weight:600;cursor:pointer;transition:all .2s}
-.btn-primary{background:linear-gradient(135deg,#D4871C,#C9A84C);color:#1A1209}
-.btn-danger{background:linear-gradient(135deg,#C62828,#E53935);color:#FFF}
-.btn:active{transform:scale(.97);opacity:.9}
+/* Buttons — пивные этикетки */
+.btn{width:100%;padding:15px;border-radius:12px;border:none;font-size:15px;font-weight:700;cursor:pointer;transition:all .2s;letter-spacing:.5px;position:relative;overflow:hidden}
+.btn::before{content:'';position:absolute;top:0;left:-100%;width:100%;height:100%;background:linear-gradient(90deg,transparent,rgba(255,255,255,.15),transparent);transition:left .5s}
+.btn:active::before{left:100%}
+.btn-primary{background:linear-gradient(135deg,#D4871C,#B8860B,#C9A84C);color:#1A1209;box-shadow:0 3px 12px rgba(212,135,28,.35),inset 0 1px 0 rgba(255,248,231,.3);text-shadow:0 1px 0 rgba(255,255,255,.2);border:1px solid rgba(244,196,48,.4)}
+.btn-danger{background:linear-gradient(135deg,#C62828,#B71C1C,#E53935);color:#FFF;box-shadow:0 3px 12px rgba(198,40,40,.3);border:1px solid rgba(229,57,53,.4)}
+.btn:active{transform:scale(.96);box-shadow:none}
 .btn:disabled{opacity:.5;pointer-events:none}
 /* Offer cards */
-.offer-card{background:rgba(42,30,18,.9);border:1px solid rgba(212,135,28,.2);border-radius:12px;padding:14px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center}
-.offer-name{font-size:14px;font-weight:600;color:#FFF8E7}
-.offer-rate{font-size:13px;color:#C9A84C}
-.offer-apply{padding:8px 16px;background:rgba(212,135,28,.2);border:1px solid rgba(212,135,28,.4);border-radius:8px;color:#D4871C;font-size:12px;font-weight:600;cursor:pointer}
-/* Menu items */
-.menu-item{display:flex;align-items:center;gap:14px;padding:14px;background:rgba(42,30,18,.9);border:1px solid rgba(212,135,28,.15);border-radius:12px;margin-bottom:10px;cursor:pointer;transition:all .2s}
-.menu-item:active{background:rgba(42,30,18,1);transform:scale(.98)}
-.menu-icon{font-size:24px;width:40px;text-align:center;animation:iconPulse 3s ease-in-out infinite}
-.menu-text{font-size:14px;font-weight:500;color:#FFF8E7}
-.menu-arrow{margin-left:auto;color:#C9A84C;font-size:14px}
+.offer-card{background:linear-gradient(145deg,rgba(55,35,12,.9),rgba(40,25,10,.95));border:1.5px solid rgba(212,135,28,.25);border-radius:14px;padding:16px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;box-shadow:0 2px 8px rgba(0,0,0,.2)}
+.offer-name{font-size:14px;font-weight:700;color:#FFF8E7}
+.offer-rate{font-size:13px;color:#F4C430;font-weight:600}
+.offer-apply{padding:9px 18px;background:linear-gradient(135deg,rgba(212,135,28,.2),rgba(184,115,51,.15));border:1.5px solid rgba(244,196,48,.4);border-radius:10px;color:#F4C430;font-size:12px;font-weight:700;cursor:pointer;letter-spacing:.3px;transition:all .2s}
+.offer-apply:active{background:rgba(212,135,28,.35);transform:scale(.95)}
+/* Menu items — пивная карта */
+.menu-item{display:flex;align-items:center;gap:14px;padding:16px;background:linear-gradient(145deg,rgba(55,35,12,.9),rgba(40,25,10,.95));border:1.5px solid rgba(212,135,28,.2);border-radius:14px;margin-bottom:10px;cursor:pointer;transition:all .2s;box-shadow:0 2px 8px rgba(0,0,0,.2)}
+.menu-item:active{background:linear-gradient(145deg,rgba(65,42,15,.95),rgba(50,30,12,.98));transform:scale(.97);border-color:rgba(244,196,48,.4)}
+.menu-item:hover{border-color:rgba(244,196,48,.4);box-shadow:0 4px 15px rgba(212,135,28,.15)}
+.menu-icon{font-size:26px;width:42px;text-align:center;filter:drop-shadow(0 0 4px rgba(244,196,48,.3))}
+.menu-text{font-size:14px;font-weight:600;color:#FFF8E7;letter-spacing:.3px}
+.menu-arrow{margin-left:auto;color:#F4C430;font-size:16px;font-weight:700}
 /* AI Chat */
 .chat-messages{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:10px}
 .chat-msg{max-width:85%;padding:10px 14px;border-radius:12px;font-size:13px;line-height:1.5;animation:fadeIn .3s}
-.chat-msg.user{align-self:flex-end;background:rgba(212,135,28,.25);border:1px solid rgba(212,135,28,.3);color:#FFF8E7}
-.chat-msg.bot{align-self:flex-start;background:rgba(42,30,18,.9);border:1px solid rgba(212,135,28,.15);color:#C9A84C}
+.chat-msg.user{align-self:flex-end;background:linear-gradient(135deg,rgba(212,135,28,.3),rgba(184,115,51,.2));border:1px solid rgba(244,196,48,.35);color:#FFF8E7}
+.chat-msg.bot{align-self:flex-start;background:linear-gradient(145deg,rgba(50,32,12,.95),rgba(35,22,10,.9));border:1px solid rgba(212,135,28,.2);color:#C9A84C}
 .chat-input-area{display:flex;gap:8px;padding:12px 16px;background:rgba(42,30,18,.95);border-top:1px solid rgba(212,135,28,.2)}
 .chat-input{flex:1;padding:10px 14px;background:rgba(26,18,9,.8);border:1px solid rgba(212,135,28,.3);border-radius:20px;color:#FFF8E7;font-size:14px;outline:none}
 .chat-send{width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg,#D4871C,#C9A84C);border:none;color:#1A1209;font-size:18px;cursor:pointer}
 /* Achievement badges */
 .badge{display:inline-flex;align-items:center;gap:4px;padding:4px 10px;background:rgba(212,135,28,.15);border:1px solid rgba(212,135,28,.2);border-radius:20px;font-size:12px;color:#C9A84C;margin:3px}
 /* Channel check overlay */
-.gate-overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:linear-gradient(135deg,#1A1209 0%,#2C1F0E 50%,#1A1209 100%);z-index:200;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;text-align:center}
-.gate-icon{font-size:64px;margin-bottom:20px;animation:iconPulse 2s ease-in-out infinite}
-.gate-title{font-size:22px;font-weight:700;color:#D4871C;margin-bottom:12px}
+.gate-overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:linear-gradient(180deg,#1A1209 0%,#2A1A0A 40%,#0F0A04 100%);z-index:200;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;text-align:center}
+.gate-icon{font-size:72px;margin-bottom:20px;animation:iconFloat 3s ease-in-out infinite,beerGlow 2.5s ease-in-out infinite}
+.gate-title{font-size:24px;font-weight:700;color:#F4C430;margin-bottom:12px;text-shadow:0 0 12px rgba(244,196,48,.4);letter-spacing:1px}
 .gate-text{font-size:14px;color:#C9A84C;margin-bottom:24px;line-height:1.6}
-.gate-btn{display:inline-block;padding:14px 32px;background:linear-gradient(135deg,#D4871C,#C9A84C);color:#1A1209;border-radius:12px;font-size:15px;font-weight:600;text-decoration:none;cursor:pointer;border:none;margin-bottom:12px}
-.gate-btn-outline{display:inline-block;padding:12px 28px;background:transparent;border:1px solid rgba(212,135,28,.4);color:#D4871C;border-radius:12px;font-size:14px;cursor:pointer;text-decoration:none}
+.gate-btn{display:inline-block;padding:15px 36px;background:linear-gradient(135deg,#D4871C,#B8860B,#C9A84C);color:#1A1209;border-radius:12px;font-size:15px;font-weight:700;text-decoration:none;cursor:pointer;border:1px solid rgba(244,196,48,.4);margin-bottom:12px;box-shadow:0 4px 15px rgba(212,135,28,.35);letter-spacing:.5px}
+.gate-btn-outline{display:inline-block;padding:12px 28px;background:rgba(212,135,28,.08);border:1.5px solid rgba(244,196,48,.4);color:#F4C430;border-radius:12px;font-size:14px;font-weight:600;cursor:pointer;text-decoration:none;transition:all .2s}
+.gate-btn-outline:active{background:rgba(212,135,28,.2)}
 /* Captcha */
-.captcha-box{background:rgba(42,30,18,.9);border:1px solid rgba(212,135,28,.3);border-radius:16px;padding:24px;max-width:320px;width:100%}
-.captcha-question{font-size:18px;color:#FFF8E7;margin-bottom:16px;font-weight:600}
-.captcha-options{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-.captcha-opt{padding:14px;background:rgba(212,135,28,.1);border:1px solid rgba(212,135,28,.3);border-radius:10px;color:#FFF8E7;font-size:16px;font-weight:600;cursor:pointer;text-align:center;transition:all .2s}
-.captcha-opt:active{background:rgba(212,135,28,.3);transform:scale(.95)}
+.captcha-box{background:linear-gradient(145deg,rgba(55,35,12,.95),rgba(35,22,10,.98));border:2px solid rgba(244,196,48,.4);border-radius:18px;padding:28px;max-width:320px;width:100%;box-shadow:0 6px 25px rgba(0,0,0,.4),0 0 20px rgba(244,196,48,.1)}
+.captcha-question{font-size:20px;color:#F4C430;margin-bottom:18px;font-weight:700;text-shadow:0 0 8px rgba(244,196,48,.3)}
+.captcha-options{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.captcha-opt{padding:16px;background:linear-gradient(135deg,rgba(212,135,28,.1),rgba(184,115,51,.08));border:1.5px solid rgba(212,135,28,.35);border-radius:12px;color:#FFF8E7;font-size:17px;font-weight:700;cursor:pointer;text-align:center;transition:all .2s}
+.captcha-opt:active{background:rgba(212,135,28,.3);transform:scale(.93);border-color:rgba(244,196,48,.6)}
 .captcha-opt.wrong{background:rgba(198,40,40,.3);border-color:rgba(198,40,40,.5)}
 .captcha-opt.correct{background:rgba(46,125,50,.3);border-color:rgba(46,125,50,.5)}
 /* Loader */
 .loader{width:32px;height:32px;border:3px solid rgba(212,135,28,.2);border-top-color:#D4871C;border-radius:50%;animation:spin .8s linear infinite;margin:20px auto}
 /* Toast */
-.toast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:rgba(42,30,18,.95);border:1px solid rgba(212,135,28,.4);padding:10px 20px;border-radius:10px;font-size:13px;color:#FFF8E7;z-index:300;animation:fadeIn .3s;pointer-events:none}
+.toast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:linear-gradient(135deg,rgba(50,30,12,.98),rgba(35,22,10,.98));border:1.5px solid rgba(244,196,48,.5);padding:12px 24px;border-radius:12px;font-size:13px;color:#FFF8E7;z-index:300;animation:fadeIn .3s;pointer-events:none;box-shadow:0 4px 20px rgba(0,0,0,.5),0 0 15px rgba(244,196,48,.15)}
 /* University */
 .lesson-card{background:rgba(42,30,18,.9);border:1px solid rgba(212,135,28,.2);border-radius:12px;padding:16px;margin-bottom:10px;cursor:pointer;transition:all .2s}
 .lesson-card:active{transform:scale(.98)}
@@ -727,16 +748,16 @@ select.form-input{appearance:none;-webkit-appearance:none}
   </div>
   <div class="main-grid fade-in">
     <div class="main-block" onclick="showScreen('cabinet')">
-      <div class="block-icon">👤</div><div class="block-title">Личный кабинет</div>
+      <div class="block-icon">🍺</div><div class="block-title">Личный кабинет</div>
     </div>
     <div class="main-block" onclick="showScreen('connection')">
-      <div class="block-icon">🔗</div><div class="block-title">Подключение</div>
+      <div class="block-icon">🍻</div><div class="block-title">Подключение</div>
     </div>
     <div class="main-block sos-block" onclick="showScreen('sos')">
-      <div class="block-icon">🆘</div><div class="block-title">SOS</div>
+      <div class="block-icon">🚨</div><div class="block-title">SOS</div>
     </div>
     <div class="main-block" onclick="showScreen('menu')">
-      <div class="block-icon">📚</div><div class="block-title">Меню</div>
+      <div class="block-icon">🍺</div><div class="block-title">Барная карта</div>
     </div>
   </div>
   <div class="footer">
@@ -750,7 +771,7 @@ select.form-input{appearance:none;-webkit-appearance:none}
   <div class="overlay-bg">
     <div class="sub-header">
       <button class="back-btn" onclick="showScreen('main')">←</button>
-      <div class="sub-title">👤 Личный кабинет</div>
+      <div class="sub-title">🍺 Личный кабинет</div>
     </div>
     <div class="content fade-in" id="cabinetContent">
       <div class="loader"></div>
@@ -763,7 +784,7 @@ select.form-input{appearance:none;-webkit-appearance:none}
   <div class="overlay-bg">
     <div class="sub-header">
       <button class="back-btn" onclick="showScreen('main')">←</button>
-      <div class="sub-title">🔗 Подключение</div>
+      <div class="sub-title">🍻 Подключение</div>
     </div>
     <div class="content fade-in" id="connectionContent">
       <div class="card" style="border-color:rgba(212,175,55,.5);background:linear-gradient(135deg,rgba(42,30,18,.95),rgba(50,35,15,.95))">
@@ -862,7 +883,7 @@ select.form-input{appearance:none;-webkit-appearance:none}
   <div class="overlay-bg">
     <div class="sub-header">
       <button class="back-btn" onclick="showScreen('main')">←</button>
-      <div class="sub-title">📚 Меню</div>
+      <div class="sub-title">🍺 Барная карта</div>
     </div>
     <div class="content fade-in">
       <div class="menu-item" onclick="showScreen('ai')">
@@ -1434,19 +1455,39 @@ function fallbackCopy(text) {
   try { document.execCommand('copy'); toast('✅ Ссылка скопирована!'); } catch(e) { toast('📋 Скопируйте вручную'); }
   document.body.removeChild(ta);
 }
-/* ============ BEER BUBBLES ============ */
+/* ============ BEER BUBBLES — БЛЕСТЯЩИЕ ============ */
 function createBubbles() {
   const container = document.getElementById('bubbles');
   if (!container) return;
-  for (let i = 0; i < 15; i++) {
+  for (let i = 0; i < 25; i++) {
     const b = document.createElement('div');
     b.className = 'bubble';
-    const size = Math.random() * 20 + 5;
+    const size = Math.random() * 18 + 4;
     b.style.width = size + 'px';
     b.style.height = size + 'px';
-    b.style.left = Math.random() * 100 + '%';
-    b.style.animationDuration = (Math.random() * 10 + 8) + 's';
-    b.style.animationDelay = (Math.random() * 12) + 's';
+    b.style.left = (Math.random() * 90 + 5) + '%';
+    const riseDur = Math.random() * 8 + 7;
+    const sparkleDur = Math.random() * 1.5 + 1.5;
+    const wobbleDur = Math.random() * 2 + 2;
+    b.style.animationDuration = riseDur+'s,'+sparkleDur+'s,'+wobbleDur+'s';
+    b.style.animationDelay = (Math.random() * 15) + 's,'+(Math.random()*2)+'s,'+(Math.random()*2)+'s';
+    // Vary brightness per bubble
+    const hue = Math.random() * 20 + 35; // 35-55 gold range
+    const lightness = Math.random() * 20 + 50;
+    b.style.setProperty('--glow-color', 'hsl('+hue+',80%,'+lightness+'%)');
+    container.appendChild(b);
+  }
+  // Create a few extra large "champagne" bubbles
+  for (let i = 0; i < 5; i++) {
+    const b = document.createElement('div');
+    b.className = 'bubble';
+    const size = Math.random() * 12 + 22;
+    b.style.width = size + 'px';
+    b.style.height = size + 'px';
+    b.style.left = (Math.random() * 80 + 10) + '%';
+    b.style.animationDuration = (Math.random()*6+10)+'s,2.5s,3.5s';
+    b.style.animationDelay = (Math.random()*20)+'s,0s,0s';
+    b.style.opacity = '0.5';
     container.appendChild(b);
   }
 }
