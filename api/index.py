@@ -20,11 +20,39 @@ import requests as http_requests
 import psycopg2
 from psycopg2.extras import RealDictCursor
 
+import urllib.parse
+
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
-CORS(app, origins=['https://web.telegram.org', '*'])
+CORS(app, origins=['https://web.telegram.org', 'https://craft-main-app.vercel.app', 'https://craft-admin-app.vercel.app'])
+
+# ===============================
+# TELEGRAM INIT DATA VALIDATION
+# ===============================
+
+def validate_telegram_init_data(init_data_str, bot_token):
+    """Validate Telegram WebApp initData via HMAC-SHA256 + auth_date check"""
+    if not init_data_str or not bot_token:
+        return False
+    try:
+        data = dict(urllib.parse.parse_qsl(init_data_str))
+        received_hash = data.pop('hash', '')
+        if not received_hash:
+            return False
+        data_check_string = '\n'.join(f'{k}={v}' for k, v in sorted(data.items()))
+        secret_key = hmac.new(b'WebAppData', bot_token.encode(), hashlib.sha256).digest()
+        calculated_hash = hmac.new(secret_key, data_check_string.encode(), hashlib.sha256).hexdigest()
+        if not hmac.compare_digest(calculated_hash, received_hash):
+            return False
+        auth_date = int(data.get('auth_date', 0))
+        if time.time() - auth_date > 300:
+            return False
+        return True
+    except Exception as e:
+        logger.error(f"initData validation error: {e}")
+        return False
 
 # ===============================
 # CONFIGURATION
@@ -32,7 +60,7 @@ CORS(app, origins=['https://web.telegram.org', '*'])
 
 class Config:
     DATABASE_URL = os.environ.get('DATABASE_URL', '')
-    TELEGRAM_BOT_TOKEN = os.environ.get('TELEGRAM_BOT_TOKEN', '7977206369:AAEPOmqrXxQ8aZkuSi9_AcYNNei520u_j4A')
+    TELEGRAM_BOT_TOKEN = os.environ.get('TELEGRAM_BOT_TOKEN', '')
     REQUIRED_CHANNEL_ID = os.environ.get('REQUIRED_CHANNEL_ID', '-1003420440477')
     ADMIN_CHAT_APPLICATIONS = os.environ.get('ADMIN_CHAT_APPLICATIONS', '-5077929004')
     ADMIN_CHAT_SOS = os.environ.get('ADMIN_CHAT_SOS', '-4896709682')
@@ -1812,6 +1840,13 @@ def api_init():
         if not telegram_id:
             return jsonify({"success": False, "error": "Telegram ID required"}), 400
         
+        # Validate Telegram initData if provided (skip for demo users)
+        init_data = data.get('init_data', '')
+        if init_data and config.TELEGRAM_BOT_TOKEN:
+            if not validate_telegram_init_data(init_data, config.TELEGRAM_BOT_TOKEN):
+                logger.warning(f"Invalid initData from telegram_id={telegram_id}")
+                return jsonify({"success": False, "error": "Invalid authentication data"}), 403
+        
         user = get_user(telegram_id)
         if user:
             try:
@@ -2363,4 +2398,4 @@ def webhook_info():
 
 # Vercel handler
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5020, debug=True)
+    app.run(host='0.0.0.0', port=5020, debug=False)

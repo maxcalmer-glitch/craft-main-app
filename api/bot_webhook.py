@@ -6,7 +6,7 @@ import os
 import urllib.parse
 
 # Токен бота
-BOT_TOKEN = '7977206369:AAEPOmqrXxQ8aZkuSi9_AcYNNei520u_j4A'
+BOT_TOKEN = os.environ.get('TELEGRAM_BOT_TOKEN', '')
 
 # Supabase connection
 DATABASE_URL = os.getenv('DATABASE_URL')
