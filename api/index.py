@@ -2503,6 +2503,84 @@ def webhook_info():
     )
     return jsonify(resp.json())
 
+@app.route('/api/migrate', methods=['GET'])
+def run_migration():
+    """Run database migrations"""
+    try:
+        conn = get_db()
+        cur = conn.cursor()
+        migrations = [
+            "ALTER TABLE users ADD COLUMN IF NOT EXISTS user_level TEXT DEFAULT 'basic'",
+            """CREATE TABLE IF NOT EXISTS admin_settings (
+                key TEXT PRIMARY KEY,
+                value TEXT NOT NULL,
+                updated_at TIMESTAMPTZ DEFAULT NOW()
+            )""",
+            """CREATE TABLE IF NOT EXISTS admin_messages (
+                id SERIAL PRIMARY KEY,
+                user_telegram_id TEXT NOT NULL,
+                direction TEXT NOT NULL,
+                message TEXT NOT NULL,
+                admin_username TEXT,
+                created_at TIMESTAMPTZ DEFAULT NOW()
+            )""",
+            """CREATE TABLE IF NOT EXISTS admin_audit_log (
+                id SERIAL PRIMARY KEY,
+                admin_username TEXT NOT NULL,
+                action TEXT NOT NULL,
+                details TEXT,
+                target_id TEXT,
+                created_at TIMESTAMPTZ DEFAULT NOW()
+            )""",
+            """CREATE TABLE IF NOT EXISTS broadcast_history (
+                id SERIAL PRIMARY KEY,
+                message TEXT NOT NULL,
+                photo_url TEXT,
+                total_sent INTEGER DEFAULT 0,
+                total_delivered INTEGER DEFAULT 0,
+                total_failed INTEGER DEFAULT 0,
+                admin_username TEXT,
+                created_at TIMESTAMPTZ DEFAULT NOW()
+            )""",
+            """CREATE TABLE IF NOT EXISTS ai_knowledge_base (
+                id SERIAL PRIMARY KEY,
+                title TEXT NOT NULL,
+                content TEXT NOT NULL,
+                file_type TEXT DEFAULT 'txt',
+                priority INTEGER DEFAULT 1,
+                is_active BOOLEAN DEFAULT TRUE,
+                created_at TIMESTAMPTZ DEFAULT NOW()
+            )""",
+            """CREATE TABLE IF NOT EXISTS ai_learned_facts (
+                id SERIAL PRIMARY KEY,
+                question TEXT NOT NULL,
+                answer TEXT NOT NULL,
+                source TEXT DEFAULT 'user_interaction',
+                priority INTEGER DEFAULT 1,
+                created_at TIMESTAMPTZ DEFAULT NOW()
+            )""",
+            """CREATE TABLE IF NOT EXISTS ai_usage_log (
+                id SERIAL PRIMARY KEY,
+                user_id INTEGER,
+                tokens_in INTEGER DEFAULT 0,
+                tokens_out INTEGER DEFAULT 0,
+                cost REAL DEFAULT 0.0,
+                created_at TIMESTAMPTZ DEFAULT NOW()
+            )""",
+        ]
+        results = []
+        for sql in migrations:
+            try:
+                cur.execute(sql)
+                results.append(f"OK: {sql[:60]}...")
+            except Exception as e:
+                results.append(f"ERR: {sql[:60]}... - {str(e)}")
+        conn.commit()
+        conn.close()
+        return jsonify({"success": True, "results": results})
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)})
+
 # Vercel handler
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5020, debug=False)
