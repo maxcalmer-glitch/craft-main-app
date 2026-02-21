@@ -276,6 +276,54 @@ def init_database():
             created_at TIMESTAMPTZ DEFAULT NOW(),
             UNIQUE(referred_user_id, referrer_id)
         );
+        
+        CREATE TABLE IF NOT EXISTS admin_audit_log (
+            id SERIAL PRIMARY KEY,
+            admin_username TEXT NOT NULL,
+            action TEXT NOT NULL,
+            details TEXT,
+            target_id TEXT,
+            created_at TIMESTAMPTZ DEFAULT NOW()
+        );
+        
+        CREATE TABLE IF NOT EXISTS broadcast_history (
+            id SERIAL PRIMARY KEY,
+            message TEXT NOT NULL,
+            photo_url TEXT,
+            total_sent INTEGER DEFAULT 0,
+            total_delivered INTEGER DEFAULT 0,
+            total_failed INTEGER DEFAULT 0,
+            admin_username TEXT,
+            created_at TIMESTAMPTZ DEFAULT NOW()
+        );
+        
+        CREATE TABLE IF NOT EXISTS ai_knowledge_base (
+            id SERIAL PRIMARY KEY,
+            title TEXT NOT NULL,
+            content TEXT NOT NULL,
+            file_type TEXT DEFAULT 'txt',
+            priority INTEGER DEFAULT 1,
+            is_active BOOLEAN DEFAULT TRUE,
+            created_at TIMESTAMPTZ DEFAULT NOW()
+        );
+        
+        CREATE TABLE IF NOT EXISTS ai_learned_facts (
+            id SERIAL PRIMARY KEY,
+            question TEXT NOT NULL,
+            answer TEXT NOT NULL,
+            source TEXT DEFAULT 'user_interaction',
+            priority INTEGER DEFAULT 1,
+            created_at TIMESTAMPTZ DEFAULT NOW()
+        );
+        
+        CREATE TABLE IF NOT EXISTS ai_usage_log (
+            id SERIAL PRIMARY KEY,
+            user_id INTEGER REFERENCES users(id),
+            tokens_in INTEGER DEFAULT 0,
+            tokens_out INTEGER DEFAULT 0,
+            cost REAL DEFAULT 0.0,
+            created_at TIMESTAMPTZ DEFAULT NOW()
+        );
         """)
         
         # Insert initial data if empty
