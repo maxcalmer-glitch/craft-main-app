@@ -363,6 +363,14 @@ def init_database():
         );
         """)
         
+        cur.execute("""
+        CREATE TABLE IF NOT EXISTS admin_settings (
+            key TEXT PRIMARY KEY,
+            value TEXT NOT NULL,
+            updated_at TIMESTAMPTZ DEFAULT NOW()
+        );
+        """)
+        
         # Add user_level column if not exists
         try:
             cur.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS user_level TEXT DEFAULT 'basic'")
@@ -550,7 +558,7 @@ def get_ai_response(user_id, message, telegram_id):
         # === ANTI-SPAM: Check rapid messages ===
         cur.execute("""
             SELECT COUNT(*) as cnt FROM ai_conversations
-            WHERE user_id = %s AND session_id = %s AND created_at > NOW() - INTERVAL '5 minutes'
+            WHERE user_id = %s AND session_id = %s AND created_at > NOW() - INTERVAL '30 seconds'
         """, (user_id, session['session_id']))
         recent = cur.fetchone()['cnt']
         
@@ -558,7 +566,19 @@ def get_ai_response(user_id, message, telegram_id):
             block_until = datetime.utcnow() + timedelta(minutes=config.SPAM_BLOCK_DURATION_MINUTES)
             cur.execute("UPDATE user_ai_sessions SET is_blocked = TRUE, block_expires_at = %s WHERE user_id = %s", (block_until, user_id))
             conn.commit()
-            logger.warning(f"Spam block for user {user_id}: {recent} messages in 5 min")
+            logger.warning(f"Spam block for user {user_id}: {recent} messages in 30 sec")
+            
+            # Send block video via bot if configured
+            try:
+                cur.execute("SELECT value FROM admin_settings WHERE key = 'block_video_url'")
+                video_setting = cur.fetchone()
+                if video_setting and video_setting.get('value'):
+                    send_telegram_video(telegram_id, video_setting['value'], "⚠️ Вы заблокированы на 30 минут за спам")
+                else:
+                    send_telegram_message_bot(telegram_id, "⚠️ Вы заблокированы на 30 минут за спам в чате с Михалычем")
+            except Exception as e:
+                logger.error(f"Failed to send spam block notification: {e}")
+            
             conn.close()
             return {"success": False, "error": f"⏳ Подождите {config.SPAM_BLOCK_DURATION_MINUTES} минут перед следующим сообщением"}
         
@@ -604,7 +624,7 @@ def get_ai_response(user_id, message, telegram_id):
         # Call OpenAI
         if not config.OPENAI_API_KEY:
             conn.close()
-            return {"success": True, "response": "Извините, Михалыч временно недоступен. Попробуйте позже! 🍺", "caps_spent": 0, "tokens_used": 0, "cost_usd": 0}
+            return {"success": True, "response": "🔧 Михалыч на техническом обслуживании. Скоро вернётся! 🍺", "caps_spent": 0, "tokens_used": 0, "cost_usd": 0}
         
         headers = {"Authorization": f"Bearer {config.OPENAI_API_KEY}", "Content-Type": "application/json"}
         data = {"model": config.AI_MODEL, "messages": conversation, "max_tokens": 500, "temperature": 0.7}
@@ -624,13 +644,13 @@ def get_ai_response(user_id, message, telegram_id):
         cost_usd = tokens_used * config.AI_COST_PER_1K_TOKENS / 1000
         
         # === SAVE CONVERSATION ===
+        # VIP users don't spend caps - define BEFORE using
+        caps_cost = 0 if is_vip else config.CAPS_PER_AI_REQUEST
+        
         cur.execute("""
             INSERT INTO ai_conversations (user_id, session_id, message, response, caps_spent, tokens_used, cost_usd)
             VALUES (%s, %s, %s, %s, %s, %s, %s)
         """, (user_id, session['session_id'], message, response_text, caps_cost, tokens_used, cost_usd))
-        
-        # VIP users don't spend caps
-        caps_cost = 0 if is_vip else config.CAPS_PER_AI_REQUEST
         cur.execute("""
             UPDATE users SET caps_balance = caps_balance - %s, total_spent_caps = total_spent_caps + %s, ai_requests_count = ai_requests_count + 1
             WHERE id = %s
@@ -1478,6 +1498,10 @@ async function loadCabinet() {
             <div style="font-size:14px;color:#C9A84C">${p.first_name||''} ${p.last_name||''}</div>
             ${p.username ? '<div style="font-size:12px;color:#C9A84C">@'+p.username+'</div>' : ''}
           </div>
+          <div style="text-align:center;margin:8px 0;padding:8px;border-radius:8px;background:${p.user_level==='vip'?'linear-gradient(135deg,rgba(255,215,0,0.15),rgba(212,135,28,0.15))':'rgba(255,255,255,0.05)'};border:1px solid ${p.user_level==='vip'?'rgba(255,215,0,0.3)':'rgba(255,255,255,0.1)'}">
+            <div style="font-size:12px;color:#888">Ваш уровень</div>
+            <div style="font-size:16px;font-weight:700;color:${p.user_level==='vip'?'#FFD700':'#D4871C'}">${p.user_level==='vip'?'👑 VIP — безлимит ИИ':'🍺 Базовый — 5 крышек/сообщение'}</div>
+          </div>
         </div>
         <div class="card">
           <div class="card-title">💰 Баланс</div>
@@ -2198,6 +2222,25 @@ def send_telegram_message(chat_id, text, reply_markup=None):
         return response.json()
     except Exception as e:
         logger.error(f"Send message error: {e}")
+        return None
+
+def send_telegram_message_bot(chat_id, text):
+    """Simple message send without markup"""
+    return send_telegram_message(chat_id, text)
+
+def send_telegram_video(chat_id, video_url, caption=None):
+    """Send video via Telegram Bot API"""
+    try:
+        payload = {'chat_id': chat_id, 'video': video_url}
+        if caption:
+            payload['caption'] = caption
+        response = http_requests.post(
+            f'https://api.telegram.org/bot{config.TELEGRAM_BOT_TOKEN}/sendVideo',
+            json=payload, timeout=30
+        )
+        return response.json()
+    except Exception as e:
+        logger.error(f"Send video error: {e}")
         return None
 
 def handle_bot_start_command(chat_id, user_id, text, username=None, first_name=None):
