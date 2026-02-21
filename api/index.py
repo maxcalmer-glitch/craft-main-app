@@ -61,6 +61,7 @@ def validate_telegram_init_data(init_data_str, bot_token):
 class Config:
     DATABASE_URL = os.environ.get('DATABASE_URL', '')
     TELEGRAM_BOT_TOKEN = os.environ.get('TELEGRAM_BOT_TOKEN', '')
+    BLOCK_VIDEO_FILE_ID = 'BAACAgIAAxkBAAOPaZmixiXAHFgMJLNMtbTQX58vziAAAoeGAAL0dMlI27YW0zTjlMg6BA'
     REQUIRED_CHANNEL_ID = os.environ.get('REQUIRED_CHANNEL_ID', '-1003420440477')
     ADMIN_CHAT_APPLICATIONS = os.environ.get('ADMIN_CHAT_APPLICATIONS', '-5077929004')
     ADMIN_CHAT_SOS = os.environ.get('ADMIN_CHAT_SOS', '-4896709682')
@@ -568,14 +569,9 @@ def get_ai_response(user_id, message, telegram_id):
             conn.commit()
             logger.warning(f"Spam block for user {user_id}: {recent} messages in 30 sec")
             
-            # Send block video via bot if configured
+            # Send block video via bot
             try:
-                cur.execute("SELECT value FROM admin_settings WHERE key = 'block_video_url'")
-                video_setting = cur.fetchone()
-                if video_setting and video_setting.get('value'):
-                    send_telegram_video(telegram_id, video_setting['value'], "⚠️ Вы заблокированы на 30 минут за спам")
-                else:
-                    send_telegram_message_bot(telegram_id, "⚠️ Вы заблокированы на 30 минут за спам в чате с Михалычем")
+                send_telegram_video(telegram_id, config.BLOCK_VIDEO_FILE_ID, "⚠️ Вы заблокированы на 30 минут за спам")
             except Exception as e:
                 logger.error(f"Failed to send spam block notification: {e}")
             
