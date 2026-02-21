@@ -571,7 +571,7 @@ MAIN_HTML = r"""<!DOCTYPE html>
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
-body{background:#1A1209;color:#FFF8E7;font-family:'Georgia',serif;min-height:100vh;overflow-x:hidden;position:relative}
+body{background:#1A1209;color:#FFF8E7;font-family:'Helvetica','Helvetica Neue',Arial,sans-serif;min-height:100vh;overflow-x:hidden;position:relative}
 body::before{content:'';position:fixed;top:0;left:0;width:100%;height:100%;background:linear-gradient(180deg,#1A1209 0%,#2A1A0A 30%,#1E1308 60%,#0F0A04 100%);z-index:0;pointer-events:none}
 /* ✨ БЛЕСТЯЩИЕ ПИВНЫЕ ПУЗЫРЬКИ */
 .bubbles{position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:0;overflow:hidden}
@@ -589,7 +589,7 @@ body::before{content:'';position:fixed;top:0;left:0;width:100%;height:100%;backg
 /* Header — Барная стойка */
 .header{background:linear-gradient(180deg,rgba(35,22,10,.98) 0%,rgba(50,30,12,.95) 100%);padding:22px 16px;text-align:center;border-bottom:2px solid rgba(212,135,28,.4);box-shadow:0 4px 20px rgba(0,0,0,.5);position:relative}
 .header::after{content:'';position:absolute;bottom:-2px;left:10%;width:80%;height:2px;background:linear-gradient(90deg,transparent,#F4C430,#D4871C,#F4C430,transparent)}
-.uid{font-size:20px;font-weight:700;color:#F4C430;margin-bottom:6px;text-shadow:0 0 10px rgba(244,196,48,.4);letter-spacing:1px;font-family:'Georgia',serif}
+.uid{font-size:20px;font-weight:700;color:#F4C430;margin-bottom:6px;text-shadow:0 0 10px rgba(244,196,48,.4);letter-spacing:1px;font-family:'Helvetica','Helvetica Neue',Arial,sans-serif}
 .balance{font-size:14px;color:#C9A84C;text-shadow:0 0 5px rgba(201,168,76,.3)}
 /* Grid */
 .main-grid{flex:1;display:grid;grid-template-columns:1fr 1fr;gap:16px;padding:24px 16px;max-width:400px;margin:0 auto;width:100%}
