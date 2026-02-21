@@ -567,7 +567,12 @@ MAIN_HTML = r"""<!DOCTYPE html>
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
-body{background:linear-gradient(135deg,#1A1209 0%,#2C1F0E 50%,#1A1209 100%);color:#FFF8E7;font-family:system-ui,sans-serif;min-height:100vh;overflow-x:hidden}
+body{background:linear-gradient(135deg,#1A1209 0%,#2C1F0E 50%,#1A1209 100%);color:#FFF8E7;font-family:system-ui,sans-serif;min-height:100vh;overflow-x:hidden;position:relative}
+/* Beer Bubbles Background */
+.bubbles{position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:0;overflow:hidden}
+.bubble{position:absolute;bottom:-20px;background:radial-gradient(circle at 30% 30%,rgba(212,175,55,.15),rgba(212,135,28,.05));border-radius:50%;animation:bubbleRise linear infinite}
+@keyframes bubbleRise{0%{transform:translateY(0) scale(1);opacity:.6}50%{opacity:.3}100%{transform:translateY(-110vh) scale(.3);opacity:0}}
+.screen,.overlay,.gate-overlay{position:relative;z-index:1}
 .screen{display:none;flex-direction:column;min-height:100vh;width:100%}
 .screen.active{display:flex}
 /* Header */
@@ -587,10 +592,16 @@ body{background:linear-gradient(135deg,#1A1209 0%,#2C1F0E 50%,#1A1209 100%);colo
 .footer-btn{padding:8px 16px;background:rgba(212,135,28,.2);border:1px solid rgba(212,135,28,.4);border-radius:8px;color:#FFF8E7;text-decoration:none;font-size:12px;cursor:pointer;transition:all .2s}
 .footer-btn:active{background:rgba(212,135,28,.4)}
 /* Animations */
-@keyframes iconPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.15)}}
-@keyframes sosPulse{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(1.2);opacity:.8}}
+@keyframes iconPulse{0%,100%{transform:scale(1) rotate(0deg)}25%{transform:scale(1.1) rotate(-5deg)}50%{transform:scale(1.2) rotate(0deg)}75%{transform:scale(1.1) rotate(5deg)}}
+@keyframes sosPulse{0%,100%{transform:scale(1);opacity:1;filter:drop-shadow(0 0 4px rgba(198,40,40,.5))}50%{transform:scale(1.25);opacity:.85;filter:drop-shadow(0 0 12px rgba(198,40,40,.8))}}
 @keyframes fadeIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
 @keyframes spin{to{transform:rotate(360deg)}}
+@keyframes beerGlow{0%,100%{filter:drop-shadow(0 0 3px rgba(212,135,28,.3))}50%{filter:drop-shadow(0 0 12px rgba(212,175,55,.6))}}
+@keyframes beerWiggle{0%,100%{transform:rotate(0deg) scale(1)}20%{transform:rotate(-12deg) scale(1.1)}40%{transform:rotate(8deg) scale(1.15)}60%{transform:rotate(-5deg) scale(1.1)}80%{transform:rotate(3deg) scale(1.05)}}
+.main-block:hover .block-icon,.main-block:active .block-icon{animation:beerWiggle .6s ease-in-out}
+.main-block{box-shadow:0 0 0 rgba(212,135,28,0);transition:all .3s,box-shadow .3s}
+.main-block:hover{box-shadow:0 0 20px rgba(212,135,28,.15);border-color:rgba(212,135,28,.5)}
+.block-icon{animation:iconPulse 2.5s ease-in-out infinite,beerGlow 3s ease-in-out infinite}
 .fade-in{animation:fadeIn .3s ease}
 /* Overlay screens */
 .overlay{position:fixed;top:0;left:0;width:100%;height:100%;z-index:100;display:none;flex-direction:column}
@@ -674,6 +685,9 @@ select.form-input{appearance:none;-webkit-appearance:none}
 </head>
 <body>
 
+<!-- Beer Bubbles Background -->
+<div class="bubbles" id="bubbles"></div>
+
 <!-- ===== GATE: Channel Check ===== -->
 <div class="gate-overlay" id="gateChannel" style="display:none">
   <div class="gate-icon">📢</div>
@@ -752,7 +766,30 @@ select.form-input{appearance:none;-webkit-appearance:none}
       <div class="sub-title">🔗 Подключение</div>
     </div>
     <div class="content fade-in" id="connectionContent">
-      <div class="loader"></div>
+      <div class="card" style="border-color:rgba(212,175,55,.5);background:linear-gradient(135deg,rgba(42,30,18,.95),rgba(50,35,15,.95))">
+        <div style="text-align:center;margin-bottom:16px">
+          <div style="font-size:42px;animation:beerGlow 2s ease-in-out infinite">🍺</div>
+          <div style="font-size:20px;font-weight:700;color:#D4871C;margin-top:8px">CRAFT ОФФЕР</div>
+          <div style="font-size:13px;color:#C9A84C;margin-top:4px">Полный пакет подключения</div>
+        </div>
+        <div style="background:rgba(26,18,9,.6);border-radius:10px;padding:14px;margin-bottom:12px">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+            <span style="font-size:14px;color:#C9A84C">🛡️ Страховой депозит</span>
+            <span style="font-size:18px;font-weight:700;color:#FFF8E7">$500</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <span style="font-size:14px;color:#C9A84C">💼 Рабочий капитал</span>
+            <span style="font-size:18px;font-weight:700;color:#FFF8E7">от $300</span>
+          </div>
+        </div>
+        <div style="font-size:12px;color:#C9A84C;line-height:1.6;margin-bottom:14px">
+          ✅ Полное обучение и поддержка 24/7<br>
+          ✅ Доступ к актуальным схемам<br>
+          ✅ Личный куратор<br>
+          ✅ Страховка от блокировок
+        </div>
+        <button class="btn btn-primary" onclick="showScreen('appForm')" style="animation:beerGlow 2s ease-in-out infinite">📋 Подать заявку</button>
+      </div>
     </div>
   </div>
 </div>
@@ -767,32 +804,50 @@ select.form-input{appearance:none;-webkit-appearance:none}
     <div class="content fade-in">
       <div class="card" style="border-color:rgba(212,135,28,.4)">
         <div class="card-title">📋 Заявка на подключение</div>
-        <div class="card-text" style="margin-bottom:16px">Заполните форму — мы свяжемся с вами</div>
+        <div class="card-text" style="margin-bottom:16px">Заполните анкету — мы свяжемся с вами</div>
         <div class="form-group">
-          <label class="form-label">Имя / Nickname</label>
+          <label class="form-label">1. Имя / Nickname</label>
           <input class="form-input" id="appName" placeholder="Как к вам обращаться">
         </div>
         <div class="form-group">
-          <label class="form-label">Telegram для связи</label>
-          <input class="form-input" id="appContact" placeholder="@username или номер">
+          <label class="form-label">2. Telegram для связи</label>
+          <input class="form-input" id="appContact" placeholder="@username или номер телефона">
         </div>
         <div class="form-group">
-          <label class="form-label">Направление</label>
+          <label class="form-label">3. Город проживания</label>
+          <input class="form-input" id="appCity" placeholder="Ваш город">
+        </div>
+        <div class="form-group">
+          <label class="form-label">4. Направление работы</label>
           <select class="form-input" id="appCategory">
-            <option value="">Выберите...</option>
+            <option value="">Выберите направление...</option>
             <option value="checks_1_10k">Чеки 1-10к</option>
             <option value="checks_10k_plus">Чеки 10к+</option>
-            <option value="sim">Сим</option>
+            <option value="sim">Сим-карты</option>
             <option value="qr_nspk">QR/НСПК</option>
+            <option value="drops">Дропы</option>
+            <option value="other">Другое</option>
           </select>
         </div>
         <div class="form-group">
-          <label class="form-label">Опыт работы</label>
-          <input class="form-input" id="appExperience" placeholder="Опишите кратко ваш опыт">
+          <label class="form-label">5. Опыт в сфере</label>
+          <select class="form-input" id="appExperience">
+            <option value="">Выберите...</option>
+            <option value="none">Без опыта</option>
+            <option value="less_1y">Менее 1 года</option>
+            <option value="1_3y">1-3 года</option>
+            <option value="3y_plus">3+ лет</option>
+          </select>
         </div>
         <div class="form-group">
-          <label class="form-label">Комментарий</label>
-          <textarea class="form-textarea" id="appComment" placeholder="Дополнительная информация"></textarea>
+          <label class="form-label">6. Сумма для старта (USD)</label>
+          <select class="form-input" id="appBudget">
+            <option value="">Выберите бюджет...</option>
+            <option value="800_1500">$800 - $1,500</option>
+            <option value="1500_3000">$1,500 - $3,000</option>
+            <option value="3000_5000">$3,000 - $5,000</option>
+            <option value="5000_plus">$5,000+</option>
+          </select>
         </div>
         <button class="btn btn-primary" id="appSubmitBtn" onclick="submitApplication()">📨 Отправить заявку</button>
       </div>
@@ -1142,7 +1197,8 @@ async function loadCabinet() {
           ${p.referrals && Object.keys(p.referrals).length > 0 ? Object.entries(p.referrals).map(([k,v]) => '<div class="stat-row"><span class="stat-label">'+k.replace('_',' ')+'</span><span class="stat-val">'+v.count+' чел / '+v.caps_earned+' 🍺</span></div>').join('') : '<div class="card-text">Приглашайте друзей и получайте крышки!</div>'}
           <div style="margin-top:12px;padding:10px;background:rgba(212,135,28,.1);border-radius:8px;text-align:center">
             <div style="font-size:12px;color:#C9A84C;margin-bottom:4px">Ваша реф. ссылка:</div>
-            <div style="font-size:11px;color:#FFF8E7;word-break:break-all">https://t.me/CraftV2Bot?start=ref_${p.system_uid}</div>
+            <div style="font-size:11px;color:#FFF8E7;word-break:break-all;margin-bottom:8px">https://t.me/CraftV2Bot?start=ref_${p.system_uid}</div>
+            <button style="padding:6px 14px;background:linear-gradient(135deg,#D4871C,#C9A84C);border:none;border-radius:8px;color:#1A1209;font-size:11px;font-weight:600;cursor:pointer" onclick="copyRefLink('https://t.me/CraftV2Bot?start=ref_${p.system_uid}')">📋 Копировать</button>
           </div>
         </div>`;
       APP.balance = p.caps_balance;
@@ -1184,17 +1240,18 @@ async function submitApplication() {
   const btn = document.getElementById('appSubmitBtn');
   const name = document.getElementById('appName').value.trim();
   const contact = document.getElementById('appContact').value.trim();
+  const city = document.getElementById('appCity').value.trim();
   const category = document.getElementById('appCategory').value;
-  const experience = document.getElementById('appExperience').value.trim();
-  const comment = document.getElementById('appComment').value.trim();
+  const experience = document.getElementById('appExperience').value;
+  const budget = document.getElementById('appBudget').value;
   
-  if (!name || !contact || !category) { toast('Заполните обязательные поля'); return; }
+  if (!name || !contact || !city || !category || !experience || !budget) { toast('Заполните все 6 полей анкеты'); return; }
   
   btn.disabled = true; btn.textContent = '⏳ Отправка...';
   try {
     const r = await api('/api/application/submit', {
       telegram_id: APP.tgId,
-      form_data: { name, contact, category, experience, comment }
+      form_data: { name, contact, city, category, experience, budget }
     });
     if (r.success) {
       toast('✅ Заявка отправлена!');
@@ -1322,9 +1379,10 @@ async function loadReferral() {
       </div>
       <div class="card">
         <div class="card-title">🔗 Ваша ссылка</div>
-        <div style="padding:12px;background:rgba(26,18,9,.8);border-radius:8px;margin-top:8px;font-size:12px;color:#FFF8E7;word-break:break-all;text-align:center">
+        <div style="padding:12px;background:rgba(26,18,9,.8);border-radius:8px;margin-top:8px;font-size:12px;color:#FFF8E7;word-break:break-all;text-align:center" id="refLinkText">
           https://t.me/CraftV2Bot?start=ref_${p.system_uid}
         </div>
+        <button class="btn btn-primary" style="margin-top:10px;font-size:13px;padding:10px" onclick="copyRefLink('https://t.me/CraftV2Bot?start=ref_${p.system_uid}')">📋 Копировать ссылку</button>
       </div>`;
   } else {
     el.innerHTML = '<div class="loader"></div>';
@@ -1365,6 +1423,36 @@ function toast(msg) {
   el.textContent = msg; el.style.display = 'block';
   setTimeout(() => { el.style.display = 'none'; }, 2500);
 }
+/* ============ CLIPBOARD ============ */
+function copyRefLink(link) {
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(link).then(() => toast('✅ Ссылка скопирована!')).catch(() => fallbackCopy(link));
+  } else { fallbackCopy(link); }
+}
+function fallbackCopy(text) {
+  const ta = document.createElement('textarea');
+  ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
+  document.body.appendChild(ta); ta.select();
+  try { document.execCommand('copy'); toast('✅ Ссылка скопирована!'); } catch(e) { toast('📋 Скопируйте вручную'); }
+  document.body.removeChild(ta);
+}
+/* ============ BEER BUBBLES ============ */
+function createBubbles() {
+  const container = document.getElementById('bubbles');
+  if (!container) return;
+  for (let i = 0; i < 15; i++) {
+    const b = document.createElement('div');
+    b.className = 'bubble';
+    const size = Math.random() * 20 + 5;
+    b.style.width = size + 'px';
+    b.style.height = size + 'px';
+    b.style.left = Math.random() * 100 + '%';
+    b.style.animationDuration = (Math.random() * 10 + 8) + 's';
+    b.style.animationDelay = (Math.random() * 12) + 's';
+    container.appendChild(b);
+  }
+}
+createBubbles();
 </script>
 </body>
 </html>"""
