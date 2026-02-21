@@ -282,16 +282,16 @@ def init_database():
         if cur.fetchone()['cnt'] == 0:
             cur.execute("""
             INSERT INTO university_lessons (title, content, exam_questions, reward_caps, order_index) VALUES
-            ('Основы крафтового пива', 
-             'Крафтовое пиво — это пиво, произведённое небольшими независимыми пивоварнями. Основные ингредиенты пива: вода, солод, хмель и дрожжи. Хмель придаёт пиву характерную горечь и аромат. Солод отвечает за цвет и сладость. Дрожжи осуществляют брожение, превращая сахар в алкоголь и углекислый газ. Существует два основных типа брожения: верховое (эли) и низовое (лагеры). Эли бродят при температуре 15-24°C и имеют более сложный вкус. Лагеры бродят при 7-13°C и отличаются чистым, мягким вкусом.',
+            ('🍺 Основы крафтового пива', 
+             '<h3>Что такое крафтовое пиво?</h3><p>Крафтовое пиво — это пиво, произведённое небольшими независимыми пивоварнями с упором на качество, вкус и технику пивоварения.</p><h3>Основные ингредиенты:</h3><ul><li>🌾 <strong>Солод</strong> — основа пива, даёт сладость и цвет</li><li>🌿 <strong>Хмель</strong> — придаёт горечь и аромат</li><li>🧬 <strong>Дрожжи</strong> — превращают сахар в алкоголь и CO₂</li><li>💧 <strong>Вода</strong> — основа всего напитка (90%+ состава)</li></ul><h3>Два типа брожения:</h3><p>🔥 <strong>Верховое (эли)</strong> — бродят при 15-24°C, более сложный вкус<br>❄️ <strong>Низовое (лагеры)</strong> — бродят при 7-13°C, чистый мягкий вкус</p><h3>Популярные стили:</h3><p>IPA, Стаут, Портер, Пшеничное, Лагер — каждый стиль имеет свои уникальные особенности вкуса, аромата и цвета.</p>',
              '[{"question": "Сколько основных ингредиентов в пиве?", "options": ["2", "4", "6"], "correct": 1}, {"question": "Что придаёт пиву горечь?", "options": ["Солод", "Хмель", "Дрожжи"], "correct": 1}, {"question": "При какой температуре бродят эли?", "options": ["7-13°C", "15-24°C", "25-35°C"], "correct": 1}]',
              30, 1),
-            ('Культура пивоварения', 
-             'История пивоварения насчитывает более 7000 лет. Первое пиво было сварено в Древнем Египте и Месопотамии. В Средние века пивоварение стало привилегией монастырей. Немецкий закон о чистоте пива (Reinheitsgebot) 1516 года — старейший действующий пищевой закон. Он разрешал использовать только воду, ячмень и хмель. Чехия — мировой лидер по потреблению пива на душу населения. Бельгия славится своими траппистскими элями, которые варят монахи.',
-             '[{"question": "В какой стране появилось первое пиво?", "options": ["Египет", "Германия", "Чехия"], "correct": 0}, {"question": "Как называется немецкий закон о чистоте пива?", "options": ["Bierfest", "Reinheitsgebot", "Oktoberfest"], "correct": 1}]',
+            ('🏺 История пивоварения', 
+             '<h3>Древние корни</h3><p>Пиво — один из древнейших алкогольных напитков, известный ещё в Древнем Египте и Месопотамии более <strong>7000 лет</strong> назад.</p><h3>Пивные традиции мира:</h3><ul><li>🇩🇪 <strong>Германия</strong> — закон о чистоте пива (Райнхайтсгебот) 1516 года — старейший пищевой закон</li><li>🇧🇪 <strong>Бельгия</strong> — монастырское пивоварение, траппистские эли</li><li>🇬🇧 <strong>Англия</strong> — родина эля и биттера</li><li>🇨🇿 <strong>Чехия</strong> — родина лагера, мировой лидер по потреблению на душу населения</li></ul><h3>Современное крафтовое движение</h3><p>Началось в США в 1970-80х годах как реакция на массовое производство безвкусного пива. Сегодня крафтовые пивоварни есть в каждой стране мира.</p>',
+             '[{"question": "В какой стране появилось первое пиво?", "options": ["Египет/Месопотамия", "Германия", "Чехия"], "correct": 0}, {"question": "Как называется немецкий закон о чистоте пива?", "options": ["Bierfest", "Райнхайтсгебот", "Oktoberfest"], "correct": 1}]',
              40, 2),
-            ('Стили и сорта пива', 
-             'IPA (India Pale Ale) — один из самых популярных крафтовых стилей, характеризуется выраженной хмелевой горечью и ароматом цитрусовых. Стаут — тёмное пиво с нотами кофе и шоколада, родом из Ирландии. Пшеничное пиво (Weizen) — немецкий стиль с банановыми и гвоздичными нотами. Sour — кислое пиво, набирающее популярность. Porter — предшественник стаута, мягче и легче. Pilsner — самый распространённый стиль в мире, родом из чешского города Пльзень.',
+            ('🍻 Стили и сорта пива', 
+             '<h3>Основные стили крафтового пива</h3><ul><li>🍊 <strong>IPA (India Pale Ale)</strong> — самый популярный крафтовый стиль. Выраженная хмелевая горечь, аромат цитрусовых и тропических фруктов</li><li>☕ <strong>Стаут</strong> — тёмное пиво с нотами кофе и шоколада, родом из Ирландии. Guinness — самый известный</li><li>🍞 <strong>Портер</strong> — предшественник стаута, мягче и легче, с карамельными нотами</li><li>🍌 <strong>Пшеничное (Weizen)</strong> — немецкий стиль с банановыми и гвоздичными нотами</li><li>🍋 <strong>Sour</strong> — кислое пиво, набирающее огромную популярность</li><li>🥇 <strong>Pilsner</strong> — самый распространённый стиль в мире, родом из чешского города Пльзень</li></ul><h3>Как выбрать своё пиво?</h3><p>Начните с лёгких стилей (лагер, пшеничное) и постепенно переходите к более насыщенным (IPA, стаут). Главное — пробовать и находить свой вкус!</p>',
              '[{"question": "Откуда родом стиль Pilsner?", "options": ["Германия", "Чехия", "Бельгия"], "correct": 1}, {"question": "Какой стиль характеризуется нотами кофе и шоколада?", "options": ["IPA", "Pilsner", "Стаут"], "correct": 2}]',
              50, 3)
             """)
@@ -429,15 +429,16 @@ def get_ai_response(user_id, message, telegram_id):
         # Call OpenAI
         if not config.OPENAI_API_KEY:
             conn.close()
-            return {"success": False, "error": "OpenAI API not configured"}
+            return {"success": True, "response": "Извините, Михалыч временно недоступен. Попробуйте позже! 🍺", "caps_spent": 0, "tokens_used": 0, "cost_usd": 0}
         
         headers = {"Authorization": f"Bearer {config.OPENAI_API_KEY}", "Content-Type": "application/json"}
         data = {"model": config.AI_MODEL, "messages": conversation, "max_tokens": 500, "temperature": 0.7}
         
         resp = http_requests.post("https://api.openai.com/v1/chat/completions", headers=headers, json=data, timeout=30)
         if resp.status_code != 200:
+            logger.error(f"OpenAI API error: {resp.status_code} - {resp.text[:200]}")
             conn.close()
-            return {"success": False, "error": "Ошибка API ИИ помощника"}
+            return {"success": True, "response": "Михалыч сейчас отдыхает, попробуйте чуть позже! 🍺🤖", "caps_spent": 0, "tokens_used": 0, "cost_usd": 0}
         
         result = resp.json()
         response_text = result['choices'][0]['message']['content']
@@ -579,7 +580,7 @@ body{background:#1A1209;color:#FFF8E7;font-family:'Helvetica','Helvetica Neue',A
 body::before{content:'';position:fixed;top:0;left:0;width:100%;height:100%;background:linear-gradient(180deg,#1A1209 0%,#2A1A0A 30%,#1E1308 60%,#0F0A04 100%);z-index:0;pointer-events:none}
 /* ✨ БЛЕСТЯЩИЕ ПИВНЫЕ ПУЗЫРЬКИ */
 .bubbles{position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:0;overflow:hidden}
-.bubble{position:absolute;bottom:-30px;border-radius:50%;animation:bubbleRise linear infinite,bubbleSparkle 2s ease-in-out infinite,bubbleWobble 3s ease-in-out infinite;
+.bubble{position:absolute;bottom:-30px;border-radius:50%;will-change:transform,opacity;transform:translateZ(0);animation:bubbleRise linear infinite,bubbleSparkle 2s ease-in-out infinite,bubbleWobble 3s ease-in-out infinite;
   background:radial-gradient(circle at 30% 30%,rgba(255,248,200,0.9) 0%,rgba(244,196,48,0.7) 20%,rgba(212,135,28,0.5) 50%,rgba(184,134,11,0.3) 75%,transparent 100%);
   box-shadow:inset 0 0 8px rgba(255,248,231,0.7),0 0 15px rgba(244,196,48,0.5),0 0 30px rgba(212,135,28,0.3),0 0 45px rgba(184,115,51,0.15);
   backdrop-filter:blur(1px)}
@@ -1233,8 +1234,8 @@ async function loadCabinet() {
           ${p.referrals && Object.keys(p.referrals).length > 0 ? Object.entries(p.referrals).map(([k,v]) => '<div class="stat-row"><span class="stat-label">'+k.replace('_',' ')+'</span><span class="stat-val">'+v.count+' чел / '+v.caps_earned+' 🍺</span></div>').join('') : '<div class="card-text">Приглашайте друзей и получайте крышки!</div>'}
           <div style="margin-top:12px;padding:10px;background:rgba(212,135,28,.1);border-radius:8px;text-align:center">
             <div style="font-size:12px;color:#C9A84C;margin-bottom:4px">Ваша реф. ссылка:</div>
-            <div style="font-size:11px;color:#FFF8E7;word-break:break-all;margin-bottom:8px">https://t.me/CraftV2Bot?start=ref_${p.system_uid}</div>
-            <button style="padding:6px 14px;background:linear-gradient(135deg,#D4871C,#C9A84C);border:none;border-radius:8px;color:#1A1209;font-size:11px;font-weight:600;cursor:pointer" onclick="copyRefLink('https://t.me/CraftV2Bot?start=ref_${p.system_uid}')">📋 Копировать</button>
+            <div style="font-size:11px;color:#FFF8E7;word-break:break-all;margin-bottom:8px">https://t.me/CRAFT_hell_bot?start=ref_${p.system_uid}</div>
+            <button style="padding:6px 14px;background:linear-gradient(135deg,#D4871C,#C9A84C);border:none;border-radius:8px;color:#1A1209;font-size:11px;font-weight:600;cursor:pointer" onclick="copyRefLink('https://t.me/CRAFT_hell_bot?start=ref_${p.system_uid}')">📋 Копировать</button>
           </div>
         </div>`;
       APP.balance = p.caps_balance;
@@ -1249,26 +1250,7 @@ async function loadCabinet() {
 
 /* ============ CONNECTION / OFFERS ============ */
 async function loadConnection() {
-  const el = document.getElementById('connectionContent');
-  el.innerHTML = '<div class="loader"></div>';
-  try {
-    const r = await api('/api/offers', null, 'GET');
-    if (r.success && r.offers) {
-      let html = '<div class="card" style="margin-bottom:16px"><div class="card-title">🔗 Доступные направления</div><div class="card-text">Выберите направление и подайте заявку</div></div>';
-      r.offers.forEach(o => {
-        html += `<div class="offer-card">
-          <div><div class="offer-name">${o.description}</div><div class="offer-rate">${o.rate_from}% — ${o.rate_to}%</div></div>
-          <button class="offer-apply" onclick="showScreen('appForm')">Подать →</button>
-        </div>`;
-      });
-      html += '<div style="margin-top:16px"><button class="btn btn-primary" onclick="showScreen(\'appForm\')">📋 Заполнить заявку</button></div>';
-      el.innerHTML = html;
-    } else {
-      el.innerHTML = '<div class="card"><div class="card-text">Нет доступных офферов</div></div>';
-    }
-  } catch(e) {
-    el.innerHTML = '<div class="card"><div class="card-text">Ошибка загрузки</div></div>';
-  }
+  /* Unified offer — static block, no separate cards */
 }
 
 /* ============ APPLICATION FORM (Step-by-step) ============ */
@@ -1481,9 +1463,9 @@ async function loadReferral() {
         <div class="card">
           <div class="card-title">🔗 Ваша ссылка</div>
           <div style="padding:12px;background:rgba(26,18,9,.8);border-radius:8px;margin-top:8px;font-size:12px;color:#FFF8E7;word-break:break-all;text-align:center">
-            https://t.me/CraftV2Bot?start=ref_${APP.uid || '0000'}
+            https://t.me/CRAFT_hell_bot?start=ref_${APP.uid || '0000'}
           </div>
-          <button class="btn btn-primary" style="margin-top:10px;font-size:13px;padding:10px" onclick="copyRefLink('https://t.me/CraftV2Bot?start=ref_${APP.uid || '0000'}')">📋 Копировать ссылку</button>
+          <button class="btn btn-primary" style="margin-top:10px;font-size:13px;padding:10px" onclick="copyRefLink('https://t.me/CRAFT_hell_bot?start=ref_${APP.uid || '0000'}')">📋 Копировать ссылку</button>
         </div>`;
     } else { throw new Error(); }
   } catch(e) {
@@ -1501,9 +1483,9 @@ async function loadReferral() {
       <div class="card">
         <div class="card-title">🔗 Ваша ссылка</div>
         <div style="padding:12px;background:rgba(26,18,9,.8);border-radius:8px;margin-top:8px;font-size:12px;color:#FFF8E7;word-break:break-all;text-align:center">
-          https://t.me/CraftV2Bot?start=ref_${p.system_uid || APP.uid || '0000'}
+          https://t.me/CRAFT_hell_bot?start=ref_${p.system_uid || APP.uid || '0000'}
         </div>
-        <button class="btn btn-primary" style="margin-top:10px;font-size:13px;padding:10px" onclick="copyRefLink('https://t.me/CraftV2Bot?start=ref_${p.system_uid || APP.uid || '0000'}')">📋 Копировать ссылку</button>
+        <button class="btn btn-primary" style="margin-top:10px;font-size:13px;padding:10px" onclick="copyRefLink('https://t.me/CRAFT_hell_bot?start=ref_${p.system_uid || APP.uid || '0000'}')">📋 Копировать ссылку</button>
       </div>`;
   }
 }
@@ -1558,7 +1540,7 @@ function fallbackCopy(text) {
 function createBubbles() {
   const container = document.getElementById('bubbles');
   if (!container) return;
-  for (let i = 0; i < 35; i++) {
+  for (let i = 0; i < 15; i++) {
     const b = document.createElement('div');
     b.className = 'bubble';
     const size = Math.random() * 25 + 8;
@@ -1577,7 +1559,7 @@ function createBubbles() {
     container.appendChild(b);
   }
   // Create a few extra large "champagne" bubbles
-  for (let i = 0; i < 5; i++) {
+  for (let i = 0; i < 3; i++) {
     const b = document.createElement('div');
     b.className = 'bubble';
     const size = Math.random() * 12 + 22;
