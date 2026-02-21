@@ -499,11 +499,17 @@ def init_database():
         for table in rls_tables:
             try:
                 cur.execute(f"ALTER TABLE {table} ENABLE ROW LEVEL SECURITY")
+                conn.commit()
             except Exception:
                 conn.rollback()
         for table in rls_tables:
             try:
-                cur.execute(f"DO $$ BEGIN CREATE POLICY deny_anon_{table} ON {table} FOR ALL TO anon USING (false); EXCEPTION WHEN duplicate_object THEN NULL; END $$")
+                cur.execute(f"""DO $$ BEGIN 
+                    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = '{table}' AND policyname = 'deny_anon_{table}') THEN
+                        EXECUTE format('CREATE POLICY deny_anon_{table} ON {table} FOR ALL TO anon USING (false)');
+                    END IF;
+                END $$""")
+                conn.commit()
             except Exception:
                 conn.rollback()
 
