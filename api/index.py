@@ -563,6 +563,10 @@ MAIN_HTML = r"""<!DOCTYPE html>
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
+<meta name="build" content="20260221-1025">
 <title>🍺 CRAFT V2.0</title>
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 <style>
@@ -742,6 +746,9 @@ select.form-input{appearance:none;-webkit-appearance:none}
 
 <!-- ===== MAIN SCREEN ===== -->
 <div class="screen" id="screenMain">
+  <div style="background:linear-gradient(135deg,#FFD700,#FFA500);color:#1A1209;text-align:center;padding:12px 16px;font-weight:bold;font-size:14px;letter-spacing:0.5px;box-shadow:0 2px 10px rgba(255,215,0,0.4)">
+    🏦 СТРАХОВОЙ ДЕПОЗИТ 500$ &nbsp;|&nbsp; 💼 РАБОЧИЙ ДЕПОЗИТ ОТ 300$
+  </div>
   <div class="header">
     <div class="uid" id="userUID">#0000</div>
     <div class="balance">Баланс: <span id="userBalance">0</span> крышек 🍺</div>
@@ -757,7 +764,7 @@ select.form-input{appearance:none;-webkit-appearance:none}
       <div class="block-icon">🚨</div><div class="block-title">SOS</div>
     </div>
     <div class="main-block" onclick="showScreen('menu')">
-      <div class="block-icon">🍺</div><div class="block-title">Барная карта</div>
+      <div class="block-icon">📋</div><div class="block-title">Барная карта</div>
     </div>
   </div>
   <div class="footer">
@@ -1459,10 +1466,10 @@ function fallbackCopy(text) {
 function createBubbles() {
   const container = document.getElementById('bubbles');
   if (!container) return;
-  for (let i = 0; i < 25; i++) {
+  for (let i = 0; i < 35; i++) {
     const b = document.createElement('div');
     b.className = 'bubble';
-    const size = Math.random() * 18 + 4;
+    const size = Math.random() * 25 + 8;
     b.style.width = size + 'px';
     b.style.height = size + 'px';
     b.style.left = (Math.random() * 90 + 5) + '%';
@@ -1502,7 +1509,12 @@ createBubbles();
 
 @app.route('/')
 def home():
-    return Response(MAIN_HTML, mimetype='text/html')
+    resp = Response(MAIN_HTML, mimetype='text/html')
+    resp.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate, max-age=0'
+    resp.headers['Pragma'] = 'no-cache'
+    resp.headers['Expires'] = '0'
+    resp.headers['X-Build'] = '20260221-1025'
+    return resp
 
 @app.route('/api/init', methods=['POST'])
 def api_init():
