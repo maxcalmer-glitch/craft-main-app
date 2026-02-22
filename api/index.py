@@ -29,7 +29,7 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
-CORS(app, origins=['https://web.telegram.org', 'https://craft-main-app.vercel.app', 'https://craft-test-app.vercel.app', 'https://craft-admin-app.vercel.app'])
+CORS(app, origins=['https://web.telegram.org', 'https://craft-main-app.vercel.app', 'https://craft-test-app.vercel.app', 'https://craft-admin-app.vercel.app', 'https://craft-admin-test.vercel.app'])
 
 # ===============================
 # TELEGRAM INIT DATA VALIDATION
