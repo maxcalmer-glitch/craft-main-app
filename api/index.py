@@ -487,6 +487,18 @@ def init_database():
         );
         """)
         
+        cur.execute("""
+        CREATE TABLE IF NOT EXISTS balance_history (
+            id SERIAL PRIMARY KEY,
+            user_id INTEGER NOT NULL,
+            amount INTEGER NOT NULL,
+            operation TEXT NOT NULL,
+            description TEXT,
+            balance_after INTEGER,
+            created_at TIMESTAMPTZ DEFAULT NOW()
+        );
+        """)
+        
         # Add user_level column if not exists
         try:
             cur.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS user_level TEXT DEFAULT 'basic'")
@@ -900,6 +912,10 @@ def get_ai_response(user_id, message, telegram_id):
             UPDATE users SET caps_balance = caps_balance - %s, total_spent_caps = total_spent_caps + %s, ai_requests_count = ai_requests_count + 1
             WHERE id = %s
         """, (caps_cost, caps_cost, user_id))
+        if caps_cost > 0:
+            cur.execute("SELECT caps_balance FROM users WHERE id = %s", (user_id,))
+            ai_bal = cur.fetchone()
+            log_balance_operation(user_id, -caps_cost, 'ai_cost', 'Запрос к ИИ', ai_bal['caps_balance'] if ai_bal else 0, conn)
         
         cur.execute("""
             UPDATE user_ai_sessions SET message_count = message_count + 1, last_activity = NOW(),
@@ -1018,6 +1034,7 @@ def create_user(telegram_id, first_name='', last_name='', username='', referrer_
         """, (telegram_id, system_uid, first_name, last_name, username, referrer_id, starting_balance))
         
         user_id = cur.fetchone()['id']
+        log_balance_operation(user_id, starting_balance, 'registration_bonus', f'Регистрация (+{starting_balance} стартовых крышек)', starting_balance, conn)
         
         # Create AI session
         session_id = str(uuid.uuid4())
@@ -1028,6 +1045,9 @@ def create_user(telegram_id, first_name='', last_name='', username='', referrer_
             # Level 1 referral: +30 caps for referrer
             cur.execute("INSERT INTO referrals (referrer_id, referred_id, level, commission_percent, caps_earned) VALUES (%s, %s, 1, 5.00, 30)", (referrer_id, user_id))
             cur.execute("UPDATE users SET caps_balance = caps_balance + 30, total_earned_caps = total_earned_caps + 30 WHERE id = %s", (referrer_id,))
+            cur.execute("SELECT caps_balance FROM users WHERE id = %s", (referrer_id,))
+            ref_bal = cur.fetchone()
+            log_balance_operation(referrer_id, 30, 'referral_bonus', f'Реферал 1-го уровня (#{user_id})', ref_bal['caps_balance'] if ref_bal else 0, conn)
             
             # Level 2 referral: +15 caps for referrer's referrer
             cur.execute("SELECT referrer_id FROM users WHERE id = %s", (referrer_id,))
@@ -1035,6 +1055,9 @@ def create_user(telegram_id, first_name='', last_name='', username='', referrer_
             if l2 and l2['referrer_id']:
                 cur.execute("INSERT INTO referrals (referrer_id, referred_id, level, commission_percent, caps_earned) VALUES (%s, %s, 2, 2.00, 15)", (l2['referrer_id'], user_id))
                 cur.execute("UPDATE users SET caps_balance = caps_balance + 15, total_earned_caps = total_earned_caps + 15 WHERE id = %s", (l2['referrer_id'],))
+                cur.execute("SELECT caps_balance FROM users WHERE id = %s", (l2['referrer_id'],))
+                l2_bal = cur.fetchone()
+                log_balance_operation(l2['referrer_id'], 15, 'referral_bonus', f'Реферал 2-го уровня (#{user_id})', l2_bal['caps_balance'] if l2_bal else 0, conn)
             
             # Send Telegram notifications
             try:
@@ -1078,6 +1101,25 @@ def create_user(telegram_id, first_name='', last_name='', username='', referrer_
     except Exception as e:
         logger.error(f"User creation failed: {e}")
         return {"success": False, "error": str(e)}
+
+def log_balance_operation(user_id, amount, operation, description, balance_after, conn=None):
+    """Log balance operation to history"""
+    should_close = False
+    if not conn:
+        conn = get_db()
+        should_close = True
+    try:
+        cur = conn.cursor()
+        cur.execute("""INSERT INTO balance_history (user_id, amount, operation, description, balance_after)
+                       VALUES (%s, %s, %s, %s, %s)""",
+                    (user_id, amount, operation, description, balance_after))
+        if should_close:
+            conn.commit()
+    except Exception as e:
+        logger.error(f"Balance log error: {e}")
+    finally:
+        if should_close:
+            conn.close()
 
 def get_user(telegram_id):
     try:
@@ -1578,6 +1620,7 @@ select.form-input{appearance:none;-webkit-appearance:none}
       <div id="cartBadge" onclick="showShopCart()" style="position:absolute;right:16px;top:50%;transform:translateY(-50%);font-size:22px;cursor:pointer">🛒 <span id="cartCount" style="background:#D4871C;color:#fff;border-radius:50%;padding:2px 7px;font-size:12px;font-weight:700;display:none">0</span></div>
     </div>
     <div class="content fade-in">
+      <div style="margin-bottom:10px"><button onclick="showScreen('purchaseHistory')" style="padding:8px 14px;border-radius:10px;border:1px solid rgba(212,135,28,.3);background:rgba(212,135,28,.1);color:#F4C430;font-size:12px;cursor:pointer">📋 Мои покупки</button></div>
       <div id="shopTabs" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px">
         <button class="shop-tab active" onclick="filterShop('all',this)" style="padding:6px 12px;border-radius:20px;border:1px solid rgba(212,135,28,.4);background:rgba(212,135,28,.2);color:#F4C430;font-size:12px;cursor:pointer;font-weight:600">Все</button>
         <button class="shop-tab" onclick="filterShop('manuals',this)" style="padding:6px 12px;border-radius:20px;border:1px solid rgba(212,135,28,.2);background:transparent;color:#C9A84C;font-size:12px;cursor:pointer">Мануалы</button>
@@ -1763,6 +1806,8 @@ function showScreen(name) {
     if (name === 'appForm') initAppForm();
     if (name === 'shop') loadShopItems();
     if (name === 'cart') loadShopCart();
+    if (name === 'purchaseHistory') loadPurchaseHistory();
+    if (name === 'balanceHistory') loadBalanceHistory('all');
   }
 }
 function updateBalance() {
@@ -1798,6 +1843,12 @@ async function loadCabinet() {
           <div class="stat-row"><span class="stat-label">Заработано всего</span><span class="stat-val">${p.total_earned_caps} 🍺</span></div>
           <div class="stat-row"><span class="stat-label">Потрачено</span><span class="stat-val">${p.total_spent_caps} 🍺</span></div>
           <div class="stat-row"><span class="stat-label">Запросов к ИИ</span><span class="stat-val">${p.ai_requests_count}</span></div>
+        </div>
+        <div class="card" onclick="showScreen('balanceHistory')" style="cursor:pointer">
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <div class="card-title">📊 История баланса</div>
+            <div style="font-size:18px;color:#C9A84C">›</div>
+          </div>
         </div>
         <div class="card">
           <div class="card-title">🏆 Достижения</div>
@@ -2305,6 +2356,93 @@ async function shopCheckout() {
   } catch(e) { toast('Ошибка', 'error'); }
   btn.disabled = false; btn.textContent = '💰 Купить';
 }
+<!-- ===== PURCHASE HISTORY ===== -->
+<div class="overlay" id="screenPurchaseHistory">
+  <div class="overlay-bg">
+    <div class="sub-header">
+      <button class="back-btn" onclick="showScreen('shop')">←</button>
+      <div class="sub-title">📋 История покупок</div>
+    </div>
+    <div class="content fade-in" id="purchaseHistoryContent">
+      <div class="loader"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== BALANCE HISTORY ===== -->
+<div class="overlay" id="screenBalanceHistory">
+  <div class="overlay-bg">
+    <div class="sub-header">
+      <button class="back-btn" onclick="showScreen('cabinet')">←</button>
+      <div class="sub-title">📊 История баланса</div>
+    </div>
+    <div class="content fade-in">
+      <div style="display:flex;gap:6px;margin-bottom:14px">
+        <button class="shop-tab active" onclick="loadBalanceHistory('all',this)" style="padding:6px 12px;border-radius:20px;border:1px solid rgba(212,135,28,.4);background:rgba(212,135,28,.2);color:#F4C430;font-size:12px;cursor:pointer;font-weight:600">Все</button>
+        <button class="shop-tab" onclick="loadBalanceHistory('income',this)" style="padding:6px 12px;border-radius:20px;border:1px solid rgba(212,135,28,.2);background:transparent;color:#C9A84C;font-size:12px;cursor:pointer">Начисления</button>
+        <button class="shop-tab" onclick="loadBalanceHistory('expense',this)" style="padding:6px 12px;border-radius:20px;border:1px solid rgba(212,135,28,.2);background:transparent;color:#C9A84C;font-size:12px;cursor:pointer">Траты</button>
+      </div>
+      <div id="balanceHistoryContent"><div class="loader"></div></div>
+    </div>
+  </div>
+</div>
+
+<script>
+async function loadPurchaseHistory() {
+  const el = document.getElementById('purchaseHistoryContent');
+  el.innerHTML = '<div class="loader"></div>';
+  try {
+    const r = await api('/api/shop/purchases', null, 'GET');
+    if (r.success && r.purchases && r.purchases.length > 0) {
+      let html = '';
+      r.purchases.forEach(p => {
+        const date = new Date(p.purchased_at).toLocaleDateString('ru-RU');
+        html += '<div class="card" style="padding:12px">' +
+          '<div style="display:flex;justify-content:space-between;align-items:center">' +
+          '<div><div style="font-size:14px;font-weight:600;color:#FFF8E7">' + p.title + '</div>' +
+          '<div style="font-size:11px;color:#C9A84C">' + p.category + ' • ' + date + '</div></div>' +
+          '<div style="font-size:14px;font-weight:700;color:#F4C430">-' + p.price_paid + ' 🍺</div></div></div>';
+      });
+      el.innerHTML = html;
+    } else {
+      el.innerHTML = '<div class="card"><div class="card-text" style="text-align:center">Покупок пока нет</div></div>';
+    }
+  } catch(e) { el.innerHTML = '<div class="card-text">Ошибка загрузки</div>'; }
+}
+
+async function loadBalanceHistory(filter, btn) {
+  filter = filter || 'all';
+  if (btn) {
+    document.querySelectorAll('#screenBalanceHistory .shop-tab').forEach(t => {
+      t.style.background = 'transparent'; t.style.color = '#C9A84C';
+    });
+    btn.style.background = 'rgba(212,135,28,.2)'; btn.style.color = '#F4C430';
+  }
+  const el = document.getElementById('balanceHistoryContent');
+  el.innerHTML = '<div class="loader"></div>';
+  try {
+    const r = await api('/api/balance/history?filter=' + filter, null, 'GET');
+    if (r.success && r.history && r.history.length > 0) {
+      let html = '';
+      r.history.forEach(h => {
+        const date = new Date(h.created_at).toLocaleDateString('ru-RU', {day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'});
+        const isPositive = h.amount > 0;
+        const color = isPositive ? '#4CAF50' : '#ff6b6b';
+        const sign = isPositive ? '+' : '';
+        const icon = h.operation === 'shop_purchase' ? '🛒' : h.operation === 'referral_bonus' ? '🤝' : h.operation === 'lesson_reward' ? '🎓' : h.operation === 'ai_cost' ? '🤖' : h.operation === 'registration_bonus' ? '🎁' : '💰';
+        html += '<div class="card" style="padding:12px;margin-bottom:8px">' +
+          '<div style="display:flex;justify-content:space-between;align-items:center">' +
+          '<div><div style="font-size:13px;color:#FFF8E7">' + icon + ' ' + (h.description || h.operation) + '</div>' +
+          '<div style="font-size:11px;color:#C9A84C">' + date + '</div></div>' +
+          '<div style="text-align:right"><div style="font-size:15px;font-weight:700;color:' + color + '">' + sign + h.amount + ' 🍺</div>' +
+          '<div style="font-size:10px;color:#888">Баланс: ' + (h.balance_after || '?') + '</div></div></div></div>';
+      });
+      el.innerHTML = html;
+    } else {
+      el.innerHTML = '<div class="card"><div class="card-text" style="text-align:center">Операций пока нет</div></div>';
+    }
+  } catch(e) { el.innerHTML = '<div class="card-text">Ошибка загрузки</div>'; }
+}
 </script>
 </body>
 </html>"""
@@ -2738,27 +2876,69 @@ def api_shop_checkout():
                 purchased_items.append(dict(full_item))
         # Deduct caps
         cur.execute("UPDATE users SET caps_balance = caps_balance - %s, total_spent_caps = total_spent_caps + %s WHERE id = %s", (total, total, user['id']))
+        new_balance = user['caps_balance'] - total
+        log_balance_operation(user['id'], -total, 'shop_purchase', f'Покупка: {", ".join([pi["title"] for pi in purchased_items])}', new_balance, conn)
         # Record purchases
         for item in cart_items:
             cur.execute("INSERT INTO shop_purchases (user_id, item_id, price_paid) VALUES (%s, %s, %s)", (user['id'], item['id'], item['price_caps']))
         # Clear cart
         cur.execute("DELETE FROM user_cart WHERE user_id = %s", (user['id'],))
+        
+        # Referral commissions from purchases: 5% L1, 2% L2
+        try:
+            cur.execute("SELECT referrer_id FROM users WHERE id = %s", (user['id'],))
+            ref_row = cur.fetchone()
+            if ref_row and ref_row['referrer_id']:
+                l1_id = ref_row['referrer_id']
+                l1_bonus = max(1, int(total * 0.05))  # 5% от покупки, минимум 1
+                cur.execute("UPDATE users SET caps_balance = caps_balance + %s, total_earned_caps = total_earned_caps + %s WHERE id = %s", (l1_bonus, l1_bonus, l1_id))
+                cur.execute("SELECT caps_balance, telegram_id, first_name FROM users WHERE id = %s", (l1_id,))
+                l1_user = cur.fetchone()
+                log_balance_operation(l1_id, l1_bonus, 'referral_purchase', f'5% от покупки реферала (#{user["id"]}): {total} крышек', l1_user['caps_balance'] if l1_user else 0, conn)
+                # Notify L1 referrer
+                if l1_user and l1_user.get('telegram_id'):
+                    try:
+                        send_telegram_message(int(l1_user['telegram_id']),
+                            f"💰 *Реферальный бонус!*\n\n"
+                            f"Ваш реферал совершил покупку на {total} 🍺\n"
+                            f"Вы получили **+{l1_bonus} крышек** (5%)")
+                    except: pass
+                
+                # L2: 2%
+                cur.execute("SELECT referrer_id FROM users WHERE id = %s", (l1_id,))
+                l2_row = cur.fetchone()
+                if l2_row and l2_row['referrer_id']:
+                    l2_id = l2_row['referrer_id']
+                    l2_bonus = max(1, int(total * 0.02))  # 2% от покупки
+                    cur.execute("UPDATE users SET caps_balance = caps_balance + %s, total_earned_caps = total_earned_caps + %s WHERE id = %s", (l2_bonus, l2_bonus, l2_id))
+                    cur.execute("SELECT caps_balance FROM users WHERE id = %s", (l2_id,))
+                    l2_user = cur.fetchone()
+                    log_balance_operation(l2_id, l2_bonus, 'referral_purchase', f'2% от покупки реферала L2 (#{user["id"]}): {total} крышек', l2_user['caps_balance'] if l2_user else 0, conn)
+        except Exception as e:
+            logger.error(f"Referral commission error: {e}")
+        
         # Get user telegram_id for file delivery
         cur.execute("SELECT telegram_id FROM users WHERE id = %s", (user['id'],))
         user_data = cur.fetchone()
         conn.commit()
         conn.close()
-        # Send files via Telegram bot
+        # Send purchased content via Telegram bot
         for pi in purchased_items:
-            if pi.get('file_url') and pi.get('file_type'):
-                telegram_id = user_data.get('telegram_id', '') if user_data else ''
-                if telegram_id and telegram_id != 'SYSTEM':
-                    try:
-                        file_msg = f"🛒 *Спасибо за покупку!*\n\n📦 *{pi['title']}*\n\nВаш товар будет отправлен ниже 👇"
+            telegram_id = user_data.get('telegram_id', '') if user_data else ''
+            if telegram_id and telegram_id != 'SYSTEM':
+                try:
+                    if pi.get('file_url') and pi.get('file_type'):
+                        file_msg = f"🛒 *Спасибо за покупку!*\n\n📦 *{pi['title']}*\n\nВаш товар отправлен ниже 👇"
                         send_telegram_message(int(telegram_id), file_msg)
                         send_file_to_user(int(telegram_id), pi)
-                    except Exception as e:
-                        logger.error(f"File delivery error: {e}")
+                    elif pi.get('content_text'):
+                        msg = f"🛒 *Спасибо за покупку!*\n\n📦 *{pi['title']}*\n\n{pi['content_text']}"
+                        send_telegram_message(int(telegram_id), msg)
+                    else:
+                        msg = f"🛒 *Покупка оформлена!*\n\n📦 *{pi['title']}*\n\n_Товар будет доступен в ближайшее время._"
+                        send_telegram_message(int(telegram_id), msg)
+                except Exception as e:
+                    logger.error(f"File delivery error: {e}")
         return jsonify({"success": True, "total_spent": total, "new_balance": user['caps_balance'] - total})
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
@@ -2781,6 +2961,34 @@ def api_shop_purchases():
         purchases = [dict(r) for r in cur.fetchall()]
         conn.close()
         return jsonify({"success": True, "purchases": purchases})
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+@app.route('/api/balance/history', methods=['GET'])
+@require_telegram_auth
+def api_balance_history():
+    """Get balance operation history"""
+    try:
+        user = get_user(request.telegram_user_id)
+        if not user:
+            return jsonify({"success": False, "error": "User not found"}), 404
+        filter_type = request.args.get('filter', 'all')
+        conn = get_db()
+        cur = conn.cursor()
+        query = "SELECT * FROM balance_history WHERE user_id = %s"
+        params = [user['id']]
+        if filter_type == 'income':
+            query += " AND amount > 0"
+        elif filter_type == 'expense':
+            query += " AND amount < 0"
+        query += " ORDER BY created_at DESC LIMIT 50"
+        cur.execute(query, params)
+        history = [dict(r) for r in cur.fetchall()]
+        conn.close()
+        for h in history:
+            if h.get('created_at'):
+                h['created_at'] = h['created_at'].isoformat()
+        return jsonify({"success": True, "history": history})
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
 
@@ -3225,6 +3433,15 @@ def run_migration():
             "ALTER TABLE ai_learned_facts ADD COLUMN IF NOT EXISTS fact TEXT",
             "ALTER TABLE ai_learned_facts ADD COLUMN IF NOT EXISTS confidence REAL DEFAULT 0.5",
             "ALTER TABLE ai_learned_facts ADD COLUMN IF NOT EXISTS learned_at TIMESTAMPTZ DEFAULT NOW()",
+            """CREATE TABLE IF NOT EXISTS balance_history (
+                id SERIAL PRIMARY KEY,
+                user_id INTEGER NOT NULL,
+                amount INTEGER NOT NULL,
+                operation TEXT NOT NULL,
+                description TEXT,
+                balance_after INTEGER,
+                created_at TIMESTAMPTZ DEFAULT NOW()
+            )""",
         ]
         results = []
         for sql in migrations:
