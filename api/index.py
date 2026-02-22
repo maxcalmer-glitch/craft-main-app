@@ -1099,7 +1099,7 @@ MAIN_HTML = r"""<!DOCTYPE html>
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<meta name="build" content="20260221-1100">
+<meta name="build" content="20260222-0815">
 <title>🍺 CRAFT V2.0</title>
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 <style>
@@ -1269,16 +1269,7 @@ select.form-input{appearance:none;-webkit-appearance:none}
 <!-- Beer Bubbles Background -->
 <div class="bubbles" id="bubbles"></div>
 
-<!-- ===== GATE: Channel Check ===== -->
-<div class="gate-overlay" id="gateChannel" style="display:none">
-  <div class="gate-icon">📻</div>
-  <div class="gate-title">Подпишитесь на канал</div>
-  <div class="gate-text">Для входа в CRAFT V2.0 необходимо<br>подписаться на наш канал</div>
-  <a class="gate-btn" id="channelLink" href="https://t.me/+MepEj5pb6kU3OGI1" onclick="openChannelLink()">📻 Подписаться</a>
-  <div style="height:12px"></div>
-  <button class="gate-btn-outline" onclick="recheckSubscription()">✅ Я подписался</button>
-  <div id="channelError" style="color:#E53935;font-size:12px;margin-top:12px;display:none"></div>
-</div>
+<!-- GATE: Channel Check DISABLED for test -->
 
 <!-- ===== GATE: Captcha ===== -->
 <div class="gate-overlay" id="gateCaptcha" style="display:none">
