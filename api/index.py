@@ -3185,6 +3185,27 @@ def run_migration():
                 cost REAL DEFAULT 0.0,
                 created_at TIMESTAMPTZ DEFAULT NOW()
             )""",
+            """CREATE TABLE IF NOT EXISTS user_cart (
+                id SERIAL PRIMARY KEY,
+                user_id INTEGER NOT NULL,
+                item_id INTEGER NOT NULL,
+                added_at TIMESTAMPTZ DEFAULT NOW(),
+                UNIQUE(user_id, item_id)
+            )""",
+            """CREATE TABLE IF NOT EXISTS lead_cards (
+                id SERIAL PRIMARY KEY,
+                user_id INTEGER NOT NULL,
+                telegram_id TEXT,
+                field_name TEXT NOT NULL,
+                field_value TEXT,
+                collected_at TIMESTAMPTZ DEFAULT NOW(),
+                UNIQUE(user_id, field_name)
+            )""",
+            "ALTER TABLE shop_items ADD COLUMN IF NOT EXISTS file_url TEXT",
+            "ALTER TABLE shop_items ADD COLUMN IF NOT EXISTS file_type TEXT",
+            "ALTER TABLE ai_learned_facts ADD COLUMN IF NOT EXISTS fact TEXT",
+            "ALTER TABLE ai_learned_facts ADD COLUMN IF NOT EXISTS confidence REAL DEFAULT 0.5",
+            "ALTER TABLE ai_learned_facts ADD COLUMN IF NOT EXISTS learned_at TIMESTAMPTZ DEFAULT NOW()",
         ]
         results = []
         for sql in migrations:
