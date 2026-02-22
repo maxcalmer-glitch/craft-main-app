@@ -1698,15 +1698,19 @@ async function startApp() {
   // 1. Init user on server
   try {
     const r = await api('/api/init', d);
-    if (r.success) {
+    if (r && r.success) {
       APP.uid = r.system_uid; APP.balance = r.caps_balance;
     }
   } catch(e) { console.error('Init failed', e); }
   
   // 2. Channel check FULLY DISABLED for test
   APP.channelOk = true;
-  hide('gateLoading');
-  showCaptcha();
+  try { hide('gateLoading'); } catch(e) {}
+  try { showCaptcha(); } catch(e) { 
+    // If captcha fails, go straight to main
+    try { hide('gateCaptcha'); } catch(e2) {}
+    showScreen('main');
+  }
 }
 
 /* ============ CHANNEL CHECK ============ */
