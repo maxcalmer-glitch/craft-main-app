@@ -29,7 +29,7 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
-CORS(app, origins=['https://web.telegram.org', 'https://craft-main-app.vercel.app', 'https://craft-admin-app.vercel.app'])
+CORS(app, origins=['https://web.telegram.org', 'https://craft-main-app.vercel.app', 'https://craft-test-app.vercel.app', 'https://craft-admin-app.vercel.app'])
 
 # ===============================
 # TELEGRAM INIT DATA VALIDATION
@@ -69,6 +69,7 @@ class Config:
     ADMIN_CHAT_APPLICATIONS = os.environ.get('ADMIN_CHAT_APPLICATIONS', '-5077929004')
     ADMIN_CHAT_SOS = os.environ.get('ADMIN_CHAT_SOS', '-4896709682')
     ADMIN_CHAT_SUPPORT = os.environ.get('ADMIN_CHAT_SUPPORT', '-5059607831')
+    APP_URL = os.environ.get('APP_URL', 'https://craft-main-app.vercel.app')
     OPENAI_API_KEY = os.environ.get('OPENAI_API_KEY', '')
     AI_MODEL = 'gpt-4o-mini'
     AI_COST_PER_1K_TOKENS = 0.00015
@@ -2929,7 +2930,7 @@ def handle_bot_start_command(chat_id, user_id, text, username=None, first_name=N
         keyboard = {
             'inline_keyboard': [[{
                 'text': '🍺 Открыть CRAFT',
-                'web_app': {'url': 'https://craft-main-app.vercel.app'}
+                'web_app': {'url': config.APP_URL}
             }]]
         }
         
@@ -3091,7 +3092,7 @@ def bot_webhook():
                 keyboard = {
                     'inline_keyboard': [[{
                         'text': '🍺 Открыть CRAFT',
-                        'web_app': {'url': 'https://craft-main-app.vercel.app'}
+                        'web_app': {'url': config.APP_URL}
                     }]]
                 }
                 send_telegram_message(chat_id, "💬 Ваше сообщение получено! Администратор скоро ответит.\n\n🍺 Или откройте приложение:", keyboard)
@@ -3106,7 +3107,7 @@ def bot_webhook():
 @require_admin_secret
 def set_webhook():
     """Set Telegram webhook URL"""
-    webhook_url = "https://craft-main-app.vercel.app/api/bot/webhook"
+    webhook_url = f"{config.APP_URL}/api/bot/webhook"
     resp = http_requests.post(
         f"https://api.telegram.org/bot{config.TELEGRAM_BOT_TOKEN}/setWebhook",
         json={"url": webhook_url, "allowed_updates": ["message"]},
