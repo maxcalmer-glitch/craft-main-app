@@ -2360,6 +2360,7 @@ async function shopCheckout() {
   } catch(e) { toast('Ошибка', 'error'); }
   btn.disabled = false; btn.textContent = '💰 Купить';
 }
+</script>
 <!-- ===== PURCHASE HISTORY ===== -->
 <div class="overlay" id="screenPurchaseHistory">
   <div class="overlay-bg">
