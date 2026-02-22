@@ -2292,7 +2292,7 @@ async function shopCheckout() {
       updateCartBadge();
       loadShopCart();
     } else {
-      showToast(r.error || 'Ошибка покупки', 'error');
+      toast('❌ ' + (r.error || 'Ошибка покупки'));
     }
   } catch(e) { toast('Ошибка', 'error'); }
   btn.disabled = false; btn.textContent = '💰 Купить';
