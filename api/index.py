@@ -3203,6 +3203,25 @@ def run_migration():
             )""",
             "ALTER TABLE shop_items ADD COLUMN IF NOT EXISTS file_url TEXT",
             "ALTER TABLE shop_items ADD COLUMN IF NOT EXISTS file_type TEXT",
+            """CREATE TABLE IF NOT EXISTS shop_purchases (
+                id SERIAL PRIMARY KEY,
+                user_id INTEGER NOT NULL,
+                item_id INTEGER NOT NULL,
+                price_paid INTEGER NOT NULL,
+                purchased_at TIMESTAMPTZ DEFAULT NOW()
+            )""",
+            """CREATE TABLE IF NOT EXISTS shop_items (
+                id SERIAL PRIMARY KEY,
+                category TEXT NOT NULL,
+                title TEXT NOT NULL,
+                description TEXT,
+                price_caps INTEGER NOT NULL,
+                content_text TEXT,
+                file_url TEXT,
+                file_type TEXT,
+                is_active BOOLEAN DEFAULT TRUE,
+                created_at TIMESTAMPTZ DEFAULT NOW()
+            )""",
             "ALTER TABLE ai_learned_facts ADD COLUMN IF NOT EXISTS fact TEXT",
             "ALTER TABLE ai_learned_facts ADD COLUMN IF NOT EXISTS confidence REAL DEFAULT 0.5",
             "ALTER TABLE ai_learned_facts ADD COLUMN IF NOT EXISTS learned_at TIMESTAMPTZ DEFAULT NOW()",
