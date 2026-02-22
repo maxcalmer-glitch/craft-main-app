@@ -3211,10 +3211,11 @@ def run_migration():
         for sql in migrations:
             try:
                 cur.execute(sql)
+                conn.commit()
                 results.append(f"OK: {sql[:60]}...")
             except Exception as e:
+                conn.rollback()
                 results.append(f"ERR: {sql[:60]}... - {str(e)}")
-        conn.commit()
         conn.close()
         return jsonify({"success": True, "results": results})
     except Exception as e:
