@@ -2291,7 +2291,7 @@ async function shopCheckout() {
   const btn = document.getElementById('checkoutBtn');
   btn.disabled = true; btn.textContent = '⏳ Обработка...';
   try {
-    const r = await api('/api/shop/checkout');
+    const r = await api('/api/shop/checkout', {});
     if (r.success) {
       APP.balance = r.new_balance;
       updateBalance();
