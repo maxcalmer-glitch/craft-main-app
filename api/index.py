@@ -1099,7 +1099,7 @@ MAIN_HTML = r"""<!DOCTYPE html>
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<meta name="build" content="20260222-0900">
+<meta name="build" content="20260222-0910">
 <title>🍺 CRAFT V2.0</title>
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 <style>
@@ -2003,8 +2003,7 @@ function openLesson(idx) {
   const el = document.getElementById('universityContent');
   let quiz = [];
   try { quiz = JSON.parse(l.exam_questions || '[]'); } catch(e) {}
-  let html = `<div class="card"><button class="back-btn" onclick="loadUniversity()" style="margin-bottom:12px">← Назад</button>
-    <div class="card-title">📖 ${l.title}</div>
+  let html = `<div class="card"><div style="display:flex;align-items:center;gap:10px;margin-bottom:14px"><button class="back-btn" onclick="loadUniversity()">←</button><div class="card-title" style="margin:0">📖 ${l.title}</div></div>
     <div class="lesson-content">${l.content}</div></div>`;
   if (quiz.length > 0) {
     html += '<div class="card"><div class="card-title">📝 Экзамен</div>';
@@ -2232,8 +2231,11 @@ async function toggleCart(itemId) {
       else shopCart.push(itemId);
       renderShopItems();
       updateCartBadge();
+      toast(inCart ? '✕ Убрано из корзины' : '✅ Добавлено в корзину');
+    } else {
+      toast('❌ ' + (r.error || 'Ошибка'));
     }
-  } catch(e) { showToast('Ошибка', 'error'); }
+  } catch(e) { toast('❌ Ошибка: ' + e.message); }
 }
 
 function updateCartBadge() {
@@ -2274,7 +2276,7 @@ async function removeFromCart(itemId) {
   try {
     const r = await api('/api/shop/cart/remove', {item_id: itemId});
     if (r.success) { shopCart = shopCart.filter(i => i !== itemId); loadShopCart(); updateCartBadge(); }
-  } catch(e) { showToast('Ошибка', 'error'); }
+  } catch(e) { toast('Ошибка', 'error'); }
 }
 
 async function shopCheckout() {
@@ -2285,14 +2287,14 @@ async function shopCheckout() {
     if (r.success) {
       APP.balance = r.new_balance;
       updateBalance();
-      showToast('✅ Покупка совершена! Списано ' + r.total_spent + ' крышек');
+      toast('✅ Покупка совершена! Списано ' + r.total_spent + ' крышек');
       shopCart = [];
       updateCartBadge();
       loadShopCart();
     } else {
       showToast(r.error || 'Ошибка покупки', 'error');
     }
-  } catch(e) { showToast('Ошибка', 'error'); }
+  } catch(e) { toast('Ошибка', 'error'); }
   btn.disabled = false; btn.textContent = '💰 Купить';
 }
 </script>
