@@ -1067,19 +1067,19 @@ def create_user(telegram_id, first_name='', last_name='', username='', referrer_
                 
                 send_telegram_message(
                     referrer['telegram_id'],
-                    f"🎉 *Отлично! Ваш друг зарегистрировался!*\n\n"
-                    f"👤 **{new_user_name}** присоединился к CRAFT\n"
-                    f"💰 Вы получили **+30 крышек**\n"
+                    f"🎉 <b>Отлично! Ваш друг зарегистрировался!</b>\n\n"
+                    f"👤 <b>{new_user_name}</b> присоединился к CRAFT\n"
+                    f"💰 Вы получили <b>+30 крышек</b>\n"
                     f"🍺 Продолжайте приглашать друзей!"
                 )
                 
                 # Notify new user about referral bonus
                 send_telegram_message(
                     telegram_id,
-                    f"🍺 *Добро пожаловать в CRAFT!*\n\n"
-                    f"🎁 **+50 крышек** за переход по ссылке друга!\n"
-                    f"👤 Вас пригласил: **{referrer_name}**\n\n"
-                    f"💰 Ваш стартовый баланс: **{starting_balance} крышек**\n"
+                    f"🍺 <b>Добро пожаловать в CRAFT!</b>\n\n"
+                    f"🎁 <b>+50 крышек</b> за переход по ссылке друга!\n"
+                    f"👤 Вас пригласил: <b>{referrer_name}</b>\n\n"
+                    f"💰 Ваш стартовый баланс: <b>{starting_balance} крышек</b>\n"
                     f"🚀 Начинайте зарабатывать еще больше!"
                 )
                 
@@ -2904,9 +2904,9 @@ def api_shop_checkout():
                 if l1_user and l1_user.get('telegram_id'):
                     try:
                         send_telegram_message(int(l1_user['telegram_id']),
-                            f"💰 *Реферальный бонус!*\n\n"
+                            f"💰 <b>Реферальный бонус!</b>\n\n"
                             f"Ваш реферал совершил покупку на {total} 🍺\n"
-                            f"Вы получили **+{l1_bonus} крышек** (5%)")
+                            f"Вы получили <b>+{l1_bonus} крышек</b> (5%)")
                     except: pass
                 
                 # L2: 2%
@@ -2933,14 +2933,14 @@ def api_shop_checkout():
             if telegram_id and telegram_id != 'SYSTEM':
                 try:
                     if pi.get('file_url') and pi.get('file_type'):
-                        file_msg = f"🛒 *Спасибо за покупку!*\n\n📦 *{pi['title']}*\n\nВаш товар отправлен ниже 👇"
+                        file_msg = f"🛒 <b>Спасибо за покупку!</b>\n\n📦 <b>{pi['title']}</b>\n\nВаш товар отправлен ниже 👇"
                         send_telegram_message(int(telegram_id), file_msg)
                         send_file_to_user(int(telegram_id), pi)
                     elif pi.get('content_text'):
-                        msg = f"🛒 *Спасибо за покупку!*\n\n📦 *{pi['title']}*\n\n{pi['content_text']}"
+                        msg = f"🛒 <b>Спасибо за покупку!</b>\n\n📦 <b>{pi['title']}</b>\n\n{pi['content_text']}"
                         send_telegram_message(int(telegram_id), msg)
                     else:
-                        msg = f"🛒 *Покупка оформлена!*\n\n📦 *{pi['title']}*\n\n_Товар будет доступен в ближайшее время._"
+                        msg = f"🛒 <b>Покупка оформлена!</b>\n\n📦 <b>{pi['title']}</b>\n\n<i>Товар будет доступен в ближайшее время.</i>"
                         send_telegram_message(int(telegram_id), msg)
                 except Exception as e:
                     logger.error(f"File delivery error: {e}")
@@ -3023,7 +3023,7 @@ def send_file_to_user(chat_id, item):
         content = item.get('content_text', 'Содержимое товара')
         title = item.get('title', 'Товар')
         if file_type == 'pdf':
-            msg = f"📄 *{title}*\n\n{content}\n\n_Файл в формате PDF будет доступен в следующем обновлении._"
+            msg = f"📄 <b>{title}</b>\n\n{content}\n\n<i>Файл в формате PDF будет доступен в следующем обновлении.</i>"
             send_telegram_message(chat_id, msg)
         elif file_type in ('txt', 'xlsx', 'csv'):
             url = f"https://api.telegram.org/bot{config.TELEGRAM_BOT_TOKEN}/sendDocument"
@@ -3033,7 +3033,7 @@ def send_file_to_user(chat_id, item):
             data = {'chat_id': chat_id, 'caption': f'📦 {title}'}
             http_requests.post(url, data=data, files=files, timeout=30)
         else:
-            send_telegram_message(chat_id, f"📦 *{title}*\n\n{content}")
+            send_telegram_message(chat_id, f"📦 <b>{title}</b>\n\n{content}")
         return True
     except Exception as e:
         logger.error(f"Send file error: {e}")
@@ -3045,7 +3045,7 @@ def send_telegram_message(chat_id, text, reply_markup=None):
         payload = {
             'chat_id': chat_id,
             'text': text,
-            'parse_mode': 'Markdown'
+            'parse_mode': 'HTML'
         }
         
         if reply_markup:
@@ -3100,36 +3100,48 @@ def handle_bot_start_command(chat_id, user_id, text, username=None, first_name=N
                 referrer_id = text.split('ref_')[1].strip()
                 
                 if referrer_id and referrer_id != user_id:  # Нельзя реферить самого себя
-                    # Сохранить реферальную связь в pending_referrals
-                    # Даже если реферер еще не в WebApp - обработается при регистрации
+                    # Проверить, не был ли реферал уже зарегистрирован
                     conn = get_db()
                     cur = conn.cursor()
-                    cur.execute(
-                        '''INSERT INTO pending_referrals (referred_user_id, referrer_id, processed) 
-                           VALUES (%s, %s, FALSE) 
-                           ON CONFLICT (referred_user_id, referrer_id) DO NOTHING''',
-                        (str(user_id), str(referrer_id))
-                    )
-                    conn.commit()
-                    conn.close()
                     
-                    is_referral = True
+                    # Проверяем: уже есть pending_referral или уже зареган?
+                    cur.execute("SELECT id FROM pending_referrals WHERE referred_user_id = %s AND referrer_id = %s", (str(user_id), str(referrer_id)))
+                    already_pending = cur.fetchone()
+                    cur.execute("SELECT id FROM referrals WHERE referred_id = %s", (str(user_id),))
+                    already_referred = cur.fetchone()
                     
-                    # Попробовать получить имя реферера
-                    referrer = get_user(str(referrer_id))
-                    if referrer:
-                        referrer_name = referrer.get('first_name') or referrer.get('username') or f"#{referrer['system_uid']}"
-                        
-                        # Notify referrer about new referral click
-                        send_telegram_message(
-                            referrer_id,
-                            f"🎉 *У вас новый реферал!*\n\n"
-                            f"👤 *{first_name or username or 'Пользователь'}* перешел по вашей ссылке\n"
-                            f"⏳ Осталось только зарегистрироваться в приложении\n\n"
-                            f"💰 После регистрации вы получите *+30 крышек*!"
+                    if not already_pending and not already_referred:
+                        cur.execute(
+                            '''INSERT INTO pending_referrals (referred_user_id, referrer_id, processed) 
+                               VALUES (%s, %s, FALSE) 
+                               ON CONFLICT (referred_user_id, referrer_id) DO NOTHING''',
+                            (str(user_id), str(referrer_id))
                         )
+                        conn.commit()
+                        
+                        # Уведомить реферера ТОЛЬКО если это первый раз
+                        referrer = get_user(str(referrer_id))
+                        if referrer:
+                            referrer_name = referrer.get('first_name') or referrer.get('username') or f"#{referrer['system_uid']}"
+                            send_telegram_message(
+                                referrer_id,
+                                f"🎉 <b>У вас новый реферал!</b>\n\n"
+                                f"👤 <b>{first_name or username or 'Пользователь'}</b> перешел по вашей ссылке\n"
+                                f"⏳ Осталось только зарегистрироваться в приложении\n\n"
+                                f"💰 После регистрации вы получите <b>+30 крышек</b>!"
+                            )
+                        else:
+                            referrer_name = f"#{referrer_id}"
                     else:
-                        referrer_name = f"#{referrer_id}"
+                        # Уже известный реферал — не уведомляем
+                        referrer = get_user(str(referrer_id))
+                        if referrer:
+                            referrer_name = referrer.get('first_name') or referrer.get('username') or f"#{referrer['system_uid']}"
+                        else:
+                            referrer_name = f"#{referrer_id}"
+                    
+                    conn.close()
+                    is_referral = True
                         
             except Exception as e:
                 logger.error(f"Referral processing error: {e}")
@@ -3144,26 +3156,26 @@ def handle_bot_start_command(chat_id, user_id, text, username=None, first_name=N
         
         # Разные приветствия для реферала и обычного пользователя
         base_welcome = (
-                "🍺 *Добро пожаловать в CRAFT!*\n\n"
+                "🍺 <b>Добро пожаловать в CRAFT!</b>\n\n"
                 "CRAFT — платформа для обучения, ведения и сопровождения команд в мире процессинга.\n\n"
                 "🧠 Наш ИИ-помощник Михалыч — 3 года опыта работы командой, отлично знает рынок процессинга изнутри.\n\n"
-                "🎓 *Университет CRAFT:*\n"
+                "🎓 <b>Университет CRAFT:</b>\n"
                 "• Откроет двери в мир заработка на процессинге\n"
                 "• Научит работать безопасно и максимально выгодно\n"
                 "• Подскажет, куда развиваться после процессинга\n\n"
-                "🍻 *Что внутри:*\n"
+                "🍻 <b>Что внутри:</b>\n"
                 "• Обучение от базы до продвинутого уровня\n"
                 "• ИИ-консультант 24/7\n"
                 "• Магазин мануалов и схем\n"
                 "• Реферальная программа\n\n"
-                "🚀 *Нажмите кнопку, чтобы открыть приложение!*"
+                "🚀 <b>Нажмите кнопку, чтобы открыть приложение!</b>"
             )
         if is_referral:
             welcome_text = (
-                f"🎉 Вас пригласил *{referrer_name}*!\n\n"
+                f"🎉 Вас пригласил <b>{referrer_name}</b>!\n\n"
                 + base_welcome + "\n\n"
-                "🎁 *Бонусы за реферал:*\n"
-                "• *+50 крышек* за переход по ссылке друга"
+                "🎁 <b>Бонусы за реферал:</b>\n"
+                "• <b>+50 крышек</b> за переход по ссылке друга"
             )
         else:
             welcome_text = base_welcome
@@ -3185,14 +3197,14 @@ def handle_bot_ref_command(chat_id, user_id):
         ref_link = f"https://t.me/CRAFT_hell_bot?start=ref_{user_id}"
         
         message = (
-            f"🔗 *Ваша реферальная ссылка:*\n\n"
-            f"`{ref_link}`\n\n"
-            f"💰 *Система наград:*\n"
-            f"• Вы: **+30 крышек** за каждого друга\n"
-            f"• Ваш друг: **+50 крышек** бонус за переход\n"
-            f"• Друзья друзей: **+15 крышек** дополнительно\n\n"
-            f"🎯 *Выгодно всем!*\n"
-            f"Ваши друзья получают стартовый бонус **+50 крышек**\n\n"
+            f"🔗 <b>Ваша реферальная ссылка:</b>\n\n"
+            f"<code>{ref_link}</code>\n\n"
+            f"💰 <b>Система наград:</b>\n"
+            f"• Вы: <b>+30 крышек</b> за каждого друга\n"
+            f"• Ваш друг: <b>+50 крышек</b> бонус за переход\n"
+            f"• Друзья друзей: <b>+15 крышек</b> дополнительно\n\n"
+            f"🎯 <b>Выгодно всем!</b>\n"
+            f"Ваши друзья получают стартовый бонус <b>+50 крышек</b>\n\n"
             f"🍺 Поделитесь ссылкой с друзьями и зарабатывайте!"
         )
         
@@ -3235,10 +3247,10 @@ def handle_bot_stats_command(chat_id, user_id):
         conn.close()
         
         message = (
-            f"📊 *Ваша реферальная статистика:*\n\n"
-            f"👥 Рефералы 1-го уровня: **{level1_count}**\n"
-            f"👥 Рефералы 2-го уровня: **{level2_count}**\n"
-            f"💰 Заработано всего: **{total_earned} крышек**\n\n"
+            f"📊 <b>Ваша реферальная статистика:</b>\n\n"
+            f"👥 Рефералы 1-го уровня: <b>{level1_count}</b>\n"
+            f"👥 Рефералы 2-го уровня: <b>{level2_count}</b>\n"
+            f"💰 Заработано всего: <b>{total_earned} крышек</b>\n\n"
             f"🍺 Продолжайте приглашать друзей!"
         )
         
