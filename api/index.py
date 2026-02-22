@@ -1099,7 +1099,7 @@ MAIN_HTML = r"""<!DOCTYPE html>
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<meta name="build" content="20260222-0815">
+<meta name="build" content="20260222-0900">
 <title>🍺 CRAFT V2.0</title>
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 <style>
@@ -1605,7 +1605,7 @@ select.form-input{appearance:none;-webkit-appearance:none}
 /* ============ STATE ============ */
 const APP = {
   tgId: null, uid: null, balance: 0, firstName: '', lastName: '', username: '',
-  profile: null, channelOk: false, captchaOk: false, ready: false
+  profile: null, channelOk: true, captchaOk: false, ready: false
 };
 const CHANNEL_LINK = 'https://t.me/+MepEj5pb6kU3OGI1';
 const API = '';
@@ -1652,15 +1652,9 @@ async function startApp() {
     }
   } catch(e) { console.error('Init failed', e); }
   
-  // 2. Check channel subscription (DISABLED for test)
+  // 2. Channel check FULLY DISABLED for test
   APP.channelOk = true;
-  
   hide('gateLoading');
-  
-  if (!APP.channelOk) {
-    show('gateChannel');
-    return;
-  }
   showCaptcha();
 }
 
