@@ -3667,16 +3667,20 @@ def admin_ai_history_users():
 @app.route('/api/admin/ai-history/<int:user_id>', methods=['GET'])
 @require_admin_secret
 def admin_ai_history_messages(user_id):
-    """Get AI conversation messages for a specific user"""
+    """Get AI conversation messages for a specific user (user_id here is telegram_id)"""
     try:
         conn = get_db()
         cur = conn.cursor()
+        # user_id param is telegram_id from frontend; ai_conversations.user_id = users.id
+        cur.execute("SELECT id FROM users WHERE telegram_id = %s", (str(user_id),))
+        db_user = cur.fetchone()
+        internal_id = db_user['id'] if db_user else user_id
         cur.execute("""
             SELECT id, message, response, caps_spent, tokens_used, cost_usd, created_at
             FROM ai_conversations
             WHERE user_id = %s
             ORDER BY created_at ASC
-        """, (user_id,))
+        """, (internal_id,))
         rows = cur.fetchall()
         conn.close()
         messages = []
@@ -3752,7 +3756,7 @@ def admin_user_chat_messages(user_id):
             FROM admin_messages
             WHERE user_telegram_id = %s
             ORDER BY created_at ASC
-        """, (user_id,))
+        """, (str(user_id),))
         rows = cur.fetchall()
         conn.close()
         messages = []
@@ -3783,7 +3787,7 @@ def admin_user_chat_send():
         cur.execute("""
             INSERT INTO admin_messages (user_telegram_id, direction, message)
             VALUES (%s, 'admin_to_user', %s)
-        """, (user_id, text))
+        """, (str(user_id), text))
         conn.commit()
         conn.close()
 
