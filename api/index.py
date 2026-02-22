@@ -1660,15 +1660,8 @@ async function startApp() {
     }
   } catch(e) { console.error('Init failed', e); }
   
-  // 2. Check channel subscription
-  if (APP.tgId && !APP.tgId.startsWith('demo_')) {
-    try {
-      const r = await api('/api/check-subscription', { telegram_id: APP.tgId });
-      APP.channelOk = r.subscribed === true;
-    } catch(e) { APP.channelOk = false; }
-  } else {
-    APP.channelOk = true; // demo mode
-  }
+  // 2. Check channel subscription (DISABLED for test)
+  APP.channelOk = true;
   
   hide('gateLoading');
   
