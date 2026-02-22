@@ -3617,6 +3617,175 @@ def admin_delete_shop_item():
     except Exception as e:
         return jsonify({"success": False, "error": str(e)})
 
+# ===============================
+# ADMIN: AI HISTORY
+# ===============================
+
+@app.route('/api/admin/ai-history', methods=['GET'])
+@require_admin_secret
+def admin_ai_history_users():
+    """List users with AI conversation stats"""
+    try:
+        conn = get_db()
+        cur = conn.cursor()
+        cur.execute("""
+            SELECT u.telegram_id, u.username, u.first_name,
+                   COUNT(*) as message_count,
+                   MAX(ac.created_at) as last_message_at
+            FROM ai_conversations ac
+            JOIN users u ON ac.user_id = u.telegram_id
+            GROUP BY u.telegram_id, u.username, u.first_name
+            ORDER BY last_message_at DESC
+        """)
+        rows = cur.fetchall()
+        conn.close()
+        users = []
+        for r in rows:
+            users.append({
+                "user_id": r["telegram_id"],
+                "username": r["username"],
+                "first_name": r["first_name"],
+                "message_count": r["message_count"],
+                "last_message_at": str(r["last_message_at"]) if r["last_message_at"] else None
+            })
+        return jsonify({"users": users})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/admin/ai-history/<int:user_id>', methods=['GET'])
+@require_admin_secret
+def admin_ai_history_messages(user_id):
+    """Get AI conversation messages for a specific user"""
+    try:
+        conn = get_db()
+        cur = conn.cursor()
+        cur.execute("""
+            SELECT id, message, response, caps_spent, tokens_used, cost_usd, created_at
+            FROM ai_conversations
+            WHERE user_id = %s
+            ORDER BY created_at ASC
+        """, (user_id,))
+        rows = cur.fetchall()
+        conn.close()
+        messages = []
+        for r in rows:
+            # User message
+            messages.append({
+                "id": r["id"],
+                "role": "user",
+                "content": r["message"],
+                "created_at": str(r["created_at"]) if r["created_at"] else None
+            })
+            # Assistant response
+            if r["response"]:
+                messages.append({
+                    "id": r["id"],
+                    "role": "assistant",
+                    "content": r["response"],
+                    "created_at": str(r["created_at"]) if r["created_at"] else None,
+                    "caps_spent": float(r["caps_spent"]) if r["caps_spent"] else 0,
+                    "tokens_used": r["tokens_used"] or 0,
+                    "cost_usd": float(r["cost_usd"]) if r["cost_usd"] else 0
+                })
+        return jsonify({"messages": messages})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+# ===============================
+# ADMIN: USER CHAT
+# ===============================
+
+@app.route('/api/admin/user-chat/users', methods=['GET'])
+@require_admin_secret
+def admin_user_chat_users():
+    """List users with admin chat messages"""
+    try:
+        conn = get_db()
+        cur = conn.cursor()
+        cur.execute("""
+            SELECT am.user_telegram_id, u.username, u.first_name,
+                   COUNT(*) as total_messages,
+                   SUM(CASE WHEN am.direction='user_to_admin' THEN 1 ELSE 0 END) as unread_count,
+                   MAX(am.created_at) as last_message_at
+            FROM admin_messages am
+            LEFT JOIN users u ON am.user_telegram_id = u.telegram_id
+            GROUP BY am.user_telegram_id, u.username, u.first_name
+            ORDER BY last_message_at DESC
+        """)
+        rows = cur.fetchall()
+        conn.close()
+        users = []
+        for r in rows:
+            users.append({
+                "user_id": r["user_telegram_id"],
+                "username": r["username"],
+                "first_name": r["first_name"],
+                "total_messages": r["total_messages"],
+                "unread_count": r["unread_count"],
+                "last_message_at": str(r["last_message_at"]) if r["last_message_at"] else None
+            })
+        return jsonify({"users": users})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/admin/user-chat/messages/<int:user_id>', methods=['GET'])
+@require_admin_secret
+def admin_user_chat_messages(user_id):
+    """Get chat messages with a specific user"""
+    try:
+        conn = get_db()
+        cur = conn.cursor()
+        cur.execute("""
+            SELECT id, direction, message, created_at
+            FROM admin_messages
+            WHERE user_telegram_id = %s
+            ORDER BY created_at ASC
+        """, (user_id,))
+        rows = cur.fetchall()
+        conn.close()
+        messages = []
+        for r in rows:
+            messages.append({
+                "id": r["id"],
+                "direction": "in" if r["direction"] == "user_to_admin" else "out",
+                "text": r["message"],
+                "created_at": str(r["created_at"]) if r["created_at"] else None
+            })
+        return jsonify({"messages": messages})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/admin/user-chat/send', methods=['POST'])
+@require_admin_secret
+def admin_user_chat_send():
+    """Send message to user via admin chat"""
+    try:
+        data = request.json
+        user_id = data.get('user_id')
+        text = data.get('text')
+        if not user_id or not text:
+            return jsonify({"error": "user_id and text required"}), 400
+
+        conn = get_db()
+        cur = conn.cursor()
+        cur.execute("""
+            INSERT INTO admin_messages (user_telegram_id, direction, message)
+            VALUES (%s, 'admin_to_user', %s)
+        """, (user_id, text))
+        conn.commit()
+        conn.close()
+
+        # Send via Telegram Bot API
+        bot_token = os.environ.get('TELEGRAM_BOT_TOKEN', '')
+        resp = http_requests.post(f'https://api.telegram.org/bot{bot_token}/sendMessage', json={
+            'chat_id': user_id,
+            'text': text
+        })
+
+        return jsonify({"success": True, "telegram_response": resp.json()})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
 # Vercel handler
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5020, debug=False)
