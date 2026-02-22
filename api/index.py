@@ -108,6 +108,14 @@ def require_telegram_auth(f):
             return jsonify({"error": "Authentication required"}), 401
         if not validate_telegram_init_data(init_data, config.TELEGRAM_BOT_TOKEN):
             return jsonify({"error": "Invalid authentication"}), 403
+        # Extract user_id from initData and attach to request
+        try:
+            parsed = dict(urllib.parse.parse_qsl(init_data))
+            user_json = parsed.get('user', '{}')
+            user_obj = json.loads(user_json)
+            request.telegram_user_id = str(user_obj.get('id', ''))
+        except Exception:
+            request.telegram_user_id = ''
         return f(*args, **kwargs)
     return decorated
 
