@@ -542,3 +542,29 @@ def admin_news_charge_daily():
         return jsonify({"success": True, "charged": charged, "deactivated": deactivated, "daily_cost": daily_cost})
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
+
+
+@admin_bp.route('/api/admin/user/<int:user_id>/balance-history', methods=['GET'])
+@require_admin_secret
+def admin_user_balance_history(user_id):
+    """Get balance history for a user"""
+    try:
+        conn = get_db()
+        cur = conn.cursor()
+        cur.execute("""
+            SELECT id, amount, operation, description, balance_after, created_at
+            FROM balance_history WHERE user_id = %s
+            ORDER BY created_at DESC LIMIT 100
+        """, (user_id,))
+        rows = cur.fetchall()
+        conn.close()
+        history = []
+        for r in rows:
+            history.append({
+                "id": r['id'], "amount": r['amount'], "operation": r['operation'],
+                "description": r['description'], "balance_after": r['balance_after'],
+                "created_at": r['created_at'].isoformat() if r['created_at'] else None
+            })
+        return jsonify({"success": True, "history": history})
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
