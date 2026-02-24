@@ -1477,7 +1477,7 @@ select.form-input{appearance:none;-webkit-appearance:none}
 .exam-start-btn:active{transform:scale(.97)}
 .exam-start-btn::after{content:'';position:absolute;top:-50%;left:-50%;width:200%;height:200%;background:linear-gradient(45deg,transparent,rgba(255,255,255,.15),transparent);transform:rotate(45deg);animation:shimmer 3s infinite}
 @keyframes examPulse{0%,100%{box-shadow:0 0 10px rgba(244,196,48,.3)}50%{box-shadow:0 0 25px rgba(244,196,48,.5)}}
-@keyframes shimmer{0%{transform:translateX(-100%) rotate(45deg)}100%{transform:translateX(100%) rotate(45deg)}}
+@keyframes shimmer{0%{background-position:200% center}100%{background-position:-200% center}}
 @keyframes slideInRight{from{opacity:0;transform:translateX(60px)}to{opacity:1;transform:translateX(0)}}
 @keyframes scaleIn{from{opacity:0;transform:scale(.7)}to{opacity:1;transform:scale(1)}}
 @keyframes fadeIn{from{opacity:0}to{opacity:1}}
@@ -2293,55 +2293,77 @@ function examAnswer(oi, correct) {
     else { showExamResult(); }
   }, 1000);
 }
-function showExamResult() {
+async function showExamResult() {
   var s = examState, total = s.quiz.length, score = s.correct;
-  var el = document.getElementById('universityContent');
   var perfect = score === total;
-  var html = '<div class="card exam-slide" style="text-align:center;padding:32px 20px">' +
-    '<div class="exam-progress-bar"><div class="exam-progress-fill" style="width:100%"></div></div>' +
-    '<div style="font-size:64px;margin:16px 0;animation:scaleIn .5s ease">' + (perfect ? '🎓' : '📝') + '</div>' +
-    '<div style="font-size:24px;font-weight:700;color:' + (perfect ? '#F4C430' : '#C9A84C') + ';margin-bottom:8px">' + score + '/' + total + '</div>' +
-    '<div style="font-size:16px;color:#FFF8E7;margin-bottom:20px">' + (perfect ? '✅ Отлично! Все ответы верные!' : '❌ Попробуйте ещё раз') + '</div>';
+  
   if (perfect) {
-    html += '<button class="exam-start-btn" onclick="completeLesson(' + s.lessonId + ',' + score + ',' + total + ')">🎓 Завершить урок</button>';
+    /* Сразу отправляем на сервер */
+    var r = await api('/api/university/complete', {telegram_id: APP.tgId, lesson_id: s.lessonId, score: score, total: total});
+    var reward = (r && r.reward) || 0;
+    var alreadyDone = r && r.already_completed;
+    launchConfetti();
+    
+    /* Fullscreen overlay */
+    var overlay = document.createElement('div');
+    overlay.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:radial-gradient(ellipse at center,rgba(30,20,10,.97) 0%,rgba(10,6,3,.99) 100%);display:flex;align-items:center;justify-content:center;z-index:9998;opacity:0;transition:opacity .4s ease';
+    overlay.innerHTML = '<div style="text-align:center;transform:scale(.8);opacity:0;transition:all .5s cubic-bezier(.34,1.56,.64,1);max-width:320px;padding:0 20px" id="examResultInner">' +
+      '<div style="position:relative;width:120px;height:120px;margin:0 auto 24px">' +
+        '<div style="position:absolute;inset:0;border-radius:50%;background:conic-gradient(from 0deg,#D4871C,#F4C430,#FFD700,#D4871C);animation:spin 3s linear infinite;opacity:.3;filter:blur(15px)"></div>' +
+        '<div style="position:absolute;inset:8px;border-radius:50%;background:radial-gradient(circle,rgba(42,30,18,.9),rgba(26,14,10,.95));display:flex;align-items:center;justify-content:center;border:2px solid rgba(244,196,48,.4)">' +
+          '<span style="font-size:48px;filter:drop-shadow(0 0 20px rgba(244,196,48,.5))">🎓</span>' +
+        '</div>' +
+      '</div>' +
+      '<div style="font-size:28px;font-weight:800;background:linear-gradient(135deg,#F4C430,#FFD700,#D4871C);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:8px;letter-spacing:-.5px">Экзамен сдан!</div>' +
+      '<div style="font-size:15px;color:rgba(255,248,231,.7);margin-bottom:24px">' + score + ' из ' + total + ' — безупречно</div>' +
+      (alreadyDone ? '<div style="font-size:13px;color:rgba(201,168,76,.6);margin-bottom:16px">Урок был пройден ранее</div>' : 
+        '<div style="display:inline-flex;align-items:center;gap:8px;padding:12px 24px;background:rgba(244,196,48,.1);border:1px solid rgba(244,196,48,.2);border-radius:20px;margin-bottom:24px">' +
+          '<span style="font-size:22px">🍺</span>' +
+          '<span style="font-size:20px;font-weight:700;color:#F4C430">+' + reward + '</span>' +
+          '<span style="font-size:14px;color:rgba(255,248,231,.6)">крышек</span>' +
+        '</div>') +
+      '<div><button onclick="this.closest(\'div[style*=fixed]\').remove();loadUniversity()" style="width:100%;padding:16px 32px;background:linear-gradient(135deg,#D4871C 0%,#F4C430 50%,#D4871C 100%);background-size:200% auto;animation:shimmer 2s linear infinite;border:none;border-radius:16px;color:#1A0E0A;font-weight:700;font-size:16px;cursor:pointer;letter-spacing:.3px;box-shadow:0 4px 20px rgba(212,135,28,.4)">Продолжить</button></div>' +
+    '</div>';
+    document.body.appendChild(overlay);
+    requestAnimationFrame(function(){
+      overlay.style.opacity = '1';
+      setTimeout(function(){
+        var inner = document.getElementById('examResultInner');
+        if (inner) { inner.style.transform = 'scale(1)'; inner.style.opacity = '1'; }
+      }, 100);
+    });
+    if (reward > 0) { APP.balance += reward; updateBalance(); }
   } else {
-    html += '<button class="exam-start-btn" onclick="startExam(' + s.lessonIdx + ')" style="background:linear-gradient(135deg,#8B6914,#C9A84C)">🔄 Пройти заново</button>' +
-      '<button style="display:block;width:100%;padding:14px;margin-top:10px;background:transparent;border:1px solid rgba(212,135,28,.3);border-radius:14px;color:#C9A84C;font-size:15px;cursor:pointer" onclick="loadUniversity()">← К списку уроков</button>';
+    /* Не все верные — показываем в контенте */
+    var el = document.getElementById('universityContent');
+    el.innerHTML = '<div class="card exam-slide" style="text-align:center;padding:40px 20px">' +
+      '<div style="position:relative;width:100px;height:100px;margin:0 auto 20px">' +
+        '<div style="position:absolute;inset:0;border-radius:50%;background:rgba(198,40,40,.15);border:2px solid rgba(198,40,40,.3);display:flex;align-items:center;justify-content:center">' +
+          '<span style="font-size:44px">📝</span>' +
+        '</div>' +
+      '</div>' +
+      '<div style="font-size:22px;font-weight:700;color:#C9A84C;margin-bottom:6px">' + score + ' из ' + total + '</div>' +
+      '<div style="font-size:14px;color:rgba(255,248,231,.5);margin-bottom:28px">Нужно ответить на все вопросы правильно</div>' +
+      '<button class="exam-start-btn" onclick="startExam(' + s.lessonIdx + ')" style="margin-bottom:10px;background:linear-gradient(135deg,#8B6914,#C9A84C)">🔄 Попробовать снова</button>' +
+      '<button style="display:block;width:100%;padding:14px;background:transparent;border:1px solid rgba(212,135,28,.15);border-radius:14px;color:rgba(201,168,76,.5);font-size:14px;cursor:pointer" onclick="loadUniversity()">← К урокам</button>' +
+    '</div>';
   }
-  html += '</div>';
-  el.innerHTML = html;
-  if (perfect) launchConfetti();
 }
 function launchConfetti() {
-  var colors = ['#F4C430','#D4871C','#FFD700','#FF6B35','#4CAF50','#E91E63'];
-  for (var i = 0; i < 40; i++) {
+  var colors = ['#F4C430','#D4871C','#FFD700','#FF6B35','#4CAF50','#E91E63','#9C27B0','#00BCD4'];
+  for (var i = 0; i < 60; i++) {
     var piece = document.createElement('div');
     piece.className = 'confetti-piece';
     piece.style.left = Math.random() * 100 + 'vw';
     piece.style.background = colors[Math.floor(Math.random() * colors.length)];
-    piece.style.animationDuration = (2 + Math.random() * 2) + 's';
-    piece.style.animationDelay = Math.random() * 1.5 + 's';
-    piece.style.width = (6 + Math.random() * 8) + 'px';
-    piece.style.height = (6 + Math.random() * 8) + 'px';
+    piece.style.animationDuration = (2.5 + Math.random() * 2.5) + 's';
+    piece.style.animationDelay = Math.random() * 1 + 's';
+    var size = 5 + Math.random() * 10;
+    piece.style.width = size + 'px';
+    piece.style.height = size * (0.4 + Math.random() * 0.6) + 'px';
+    piece.style.borderRadius = Math.random() > 0.5 ? '50%' : '2px';
     document.body.appendChild(piece);
-    setTimeout(function(p){ p.remove(); }, 5000, piece);
-  }
-}
-async function completeLesson(lessonId, score, total) {
-  if (score < total) {
-    toast('Попробуйте ещё раз! ' + score + '/' + total);
-    return;
-  }
-  const r = await api('/api/university/complete', {telegram_id: APP.tgId, lesson_id: lessonId, score: score, total: total});
-  if (r.success && !r.already_completed) {
-    var overlay = document.createElement('div');
-    overlay.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.85);display:flex;align-items:center;justify-content:center;z-index:9999;animation:fadeIn .3s';
-    overlay.innerHTML = '<div style="text-align:center;animation:scaleIn .5s"><div style="font-size:80px;margin-bottom:16px">🎓✅</div><div style="font-size:24px;font-weight:700;color:#F4C430;margin-bottom:8px">Урок пройден!</div><div style="font-size:16px;color:#FFF8E7">+' + (r.reward||0) + ' 🍺 крышек</div><button onclick="this.parentElement.parentElement.remove();loadUniversity()" style="margin-top:20px;padding:12px 32px;background:linear-gradient(135deg,#D4871C,#F4C430);border:none;border-radius:12px;color:#1A1209;font-weight:700;font-size:16px;cursor:pointer">Продолжить</button></div>';
-    document.body.appendChild(overlay);
-  } else if (r.already_completed) {
-    toast('Урок уже был пройден ранее!');
-  } else {
-    toast(r.error || 'Ошибка');
+    setTimeout(function(p){ p.remove(); }, 6000, piece);
   }
 }
 
