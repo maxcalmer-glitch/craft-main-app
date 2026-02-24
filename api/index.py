@@ -1243,6 +1243,15 @@ def check_achievements(user_id, conn=None):
         if purchases_count >= 1:
             checks.append('application_sender')
 
+        # SOS использование
+        cur.execute("SELECT COUNT(*) as cnt FROM sos_requests WHERE user_id = %s", (user_id,))
+        sos_count = cur.fetchone()['cnt']
+        if sos_count >= 1:
+            checks.append('sos_helper')
+
+        # Первое посещение (всегда даём)
+        checks.append('first_beer')
+
         for code in checks:
             if code not in earned_codes:
                 cur.execute("SELECT id, reward_caps FROM achievements WHERE code = %s", (code,))
@@ -2052,10 +2061,12 @@ async function loadConnection() {
     const r = await api('/api/offers', null, 'GET');
     if (r.success && r.offers && r.offers.length > 0) {
       let offersHtml = '';
+      const offerIcons = {checks_1_10k:'💳',checks_10k_plus:'🏦',sim:'📱',qr_nspk:'📲',bt:'🔒'};
       r.offers.forEach(o => {
+        const icon = offerIcons[o.category] || '📌';
         const rateText = o.rate_from === o.rate_to ? o.rate_from + '%' : o.rate_from + '-' + o.rate_to + '%';
         offersHtml += '<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid rgba(212,135,28,.15)">' +
-          '<span style="font-size:14px;color:#C9A84C">' + o.description + '</span>' +
+          '<span style="font-size:14px;color:#C9A84C">' + icon + ' ' + o.description + '</span>' +
           '<span style="font-size:16px;font-weight:700;color:#FFF8E7">' + rateText + '</span></div>';
       });
       el.innerHTML = '<div class="card" style="border-color:rgba(212,175,55,.5);background:linear-gradient(135deg,rgba(42,30,18,.95),rgba(50,35,15,.95))">' +
@@ -2737,6 +2748,9 @@ def api_init():
                 conn.close()
             except: pass
             
+            try: check_achievements(user['id'])
+            except: pass
+            
             return jsonify({
                 "success": True, "system_uid": user['system_uid'],
                 "caps_balance": user['caps_balance'],
@@ -2867,6 +2881,8 @@ def api_submit_sos():
         
         msg = f"🆘 <b>SOS ЗАЯВКА</b>\n👤 {user['first_name']}\n🆔 #{user['system_uid']}\n🏙️ {city}\n📞 {contact}\n📝 {description}\n❗ СРОЧНОЕ РЕАГИРОВАНИЕ"
         send_to_admin_chat(config.ADMIN_CHAT_SOS, msg)
+        
+        check_achievements(user['id'])
         
         return jsonify({"success": True, "sos_id": sos_id, "message": "SOS заявка отправлена!"})
     except Exception as e:
