@@ -18,6 +18,19 @@ def get_db():
     return conn
 
 
+def get_setting(key, default=None):
+    """Get a value from admin_settings table"""
+    try:
+        conn = get_db()
+        cur = conn.cursor()
+        cur.execute("SELECT value FROM admin_settings WHERE key = %s", (key,))
+        row = cur.fetchone()
+        conn.close()
+        return row['value'] if row else default
+    except Exception:
+        return default
+
+
 def init_database():
     """Initialize PostgreSQL schema if needed"""
     try:
@@ -349,6 +362,18 @@ def init_database():
         """)
 
         cur.execute("""
+        CREATE TABLE IF NOT EXISTS news_subscriptions (
+            id SERIAL PRIMARY KEY,
+            user_id INTEGER REFERENCES users(id),
+            telegram_id TEXT NOT NULL,
+            is_active BOOLEAN DEFAULT TRUE,
+            subscribed_at TIMESTAMPTZ DEFAULT NOW(),
+            expires_at TIMESTAMPTZ,
+            UNIQUE(user_id)
+        );
+        """)
+
+        cur.execute("""
         CREATE TABLE IF NOT EXISTS balance_history (
             id SERIAL PRIMARY KEY,
             user_id INTEGER NOT NULL,
@@ -417,13 +442,19 @@ def init_database():
             VALUES ('SYSTEM', 'ADMIN', 'System', 'Admin', 'system_admin', 999999)
             """)
 
+        # Insert default admin settings
+        cur.execute("""
+        INSERT INTO admin_settings (key, value) VALUES ('news_daily_cost', '10') ON CONFLICT (key) DO NOTHING;
+        INSERT INTO admin_settings (key, value) VALUES ('ai_message_cost', '5') ON CONFLICT (key) DO NOTHING;
+        """)
+
         # Enable RLS on all tables to block anon access via Supabase REST API
         rls_tables = ['users', 'referrals', 'pending_referrals', 'achievements', 'user_achievements',
                       'offers', 'ai_conversations', 'user_ai_sessions', 'ai_knowledge_base',
                       'ai_learned_facts', 'ai_usage_log', 'admin_audit_log', 'broadcast_history',
                       'admin_messages', 'admin_settings', 'lessons', 'user_lessons',
                       'applications', 'sos_requests', 'support_tickets', 'university_lessons',
-                      'shop_items', 'shop_purchases', 'user_cart']
+                      'shop_items', 'shop_purchases', 'user_cart', 'news_subscriptions']
         for table in rls_tables:
             try:
                 cur.execute(f"ALTER TABLE {table} ENABLE ROW LEVEL SECURITY")

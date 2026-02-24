@@ -10,7 +10,7 @@ from datetime import datetime, timedelta
 
 import requests as http_requests
 from .config import config
-from .database import get_db
+from .database import get_db, get_setting
 from .security import check_prompt_injection
 from .utils import send_telegram_video, log_balance_operation
 
@@ -119,12 +119,13 @@ def get_ai_response(user_id, message, telegram_id):
                 cur.execute("UPDATE user_ai_sessions SET is_blocked = FALSE, message_count = 0, block_expires_at = NULL WHERE user_id = %s", (user_id,))
 
         # Check caps balance and VIP status
+        ai_cost = int(get_setting('ai_message_cost', str(config.CAPS_PER_AI_REQUEST)))
         cur.execute("SELECT caps_balance, user_level FROM users WHERE id = %s", (user_id,))
         user = cur.fetchone()
         is_vip = user and user.get('user_level') == 'vip'
-        if not user or (not is_vip and user['caps_balance'] < config.CAPS_PER_AI_REQUEST):
+        if not user or (not is_vip and user['caps_balance'] < ai_cost):
             conn.close()
-            return {"success": False, "error": f"Недостаточно крышек! Нужно {config.CAPS_PER_AI_REQUEST} 🍺"}
+            return {"success": False, "error": f"Недостаточно крышек! Нужно {ai_cost} 🍺"}
 
         # === ANTI-SPAM: Check rapid response pattern ===
         cur.execute("""
@@ -245,7 +246,7 @@ def get_ai_response(user_id, message, telegram_id):
         cost_usd = tokens_used * config.AI_COST_PER_1K_TOKENS / 1000
 
         # === SAVE CONVERSATION ===
-        caps_cost = 0 if is_vip else config.CAPS_PER_AI_REQUEST
+        caps_cost = 0 if is_vip else ai_cost
 
         cur.execute("""
             INSERT INTO ai_conversations (user_id, session_id, message, response, caps_spent, tokens_used, cost_usd)

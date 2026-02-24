@@ -4,11 +4,13 @@
 """
 
 import os
+import time
 import logging
 import requests as http_requests
 from flask import Blueprint, request, jsonify
 from .auth import require_admin_secret
 from .database import get_db
+from .utils import send_telegram_message
 from .config import config
 
 logger = logging.getLogger(__name__)
@@ -342,5 +344,113 @@ def admin_ai_unblock():
         conn.commit()
         conn.close()
         return jsonify({"success": True, "message": f"AI unblocked for user {user_id}"})
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
+# ===== ADMIN SETTINGS =====
+
+@admin_bp.route('/api/admin/settings', methods=['GET'])
+@require_admin_secret
+def admin_get_settings():
+    try:
+        conn = get_db()
+        cur = conn.cursor()
+        cur.execute("SELECT key, value FROM admin_settings")
+        rows = cur.fetchall()
+        conn.close()
+        settings = {r['key']: r['value'] for r in rows}
+        return jsonify({"success": True, "settings": settings})
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
+@admin_bp.route('/api/admin/settings', methods=['POST'])
+@require_admin_secret
+def admin_update_settings():
+    try:
+        data = request.json or {}
+        allowed_keys = {'news_daily_cost', 'ai_message_cost'}
+        conn = get_db()
+        cur = conn.cursor()
+        updated = []
+        for key, value in data.items():
+            if key in allowed_keys:
+                cur.execute("""
+                    INSERT INTO admin_settings (key, value, updated_at) VALUES (%s, %s, NOW())
+                    ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, updated_at = NOW()
+                """, (key, str(value)))
+                updated.append(key)
+        conn.commit()
+        conn.close()
+        return jsonify({"success": True, "updated": updated})
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
+# ===== NEWS ADMIN =====
+
+@admin_bp.route('/api/admin/news/broadcast', methods=['POST'])
+@require_admin_secret
+def admin_news_broadcast():
+    try:
+        data = request.json or {}
+        message = data.get('message', '')
+        if not message:
+            return jsonify({"success": False, "error": "message required"}), 400
+
+        conn = get_db()
+        cur = conn.cursor()
+        cur.execute("""
+            SELECT telegram_id FROM news_subscriptions
+            WHERE is_active = TRUE AND expires_at > NOW()
+        """)
+        subscribers = cur.fetchall()
+        conn.close()
+
+        sent = 0
+        failed = 0
+        for sub in subscribers:
+            try:
+                result = send_telegram_message(sub['telegram_id'], message)
+                if result and result.get('ok'):
+                    sent += 1
+                else:
+                    failed += 1
+            except Exception:
+                failed += 1
+            time.sleep(0.1)  # 100ms delay
+
+        return jsonify({"success": True, "sent": sent, "failed": failed})
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
+@admin_bp.route('/api/admin/news/subscribers', methods=['GET'])
+@require_admin_secret
+def admin_news_subscribers():
+    try:
+        conn = get_db()
+        cur = conn.cursor()
+        cur.execute("""
+            SELECT ns.telegram_id, ns.is_active, ns.subscribed_at, ns.expires_at,
+                   u.first_name, u.username
+            FROM news_subscriptions ns
+            JOIN users u ON ns.user_id = u.id
+            WHERE ns.is_active = TRUE AND ns.expires_at > NOW()
+            ORDER BY ns.subscribed_at DESC
+        """)
+        rows = cur.fetchall()
+        conn.close()
+        subscribers = []
+        for r in rows:
+            subscribers.append({
+                "telegram_id": r['telegram_id'],
+                "first_name": r['first_name'],
+                "username": r['username'],
+                "subscribed_at": r['subscribed_at'].isoformat() if r['subscribed_at'] else None,
+                "expires_at": r['expires_at'].isoformat() if r['expires_at'] else None
+            })
+        return jsonify({"success": True, "subscribers": subscribers, "total": len(subscribers)})
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500

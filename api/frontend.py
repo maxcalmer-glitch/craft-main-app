@@ -405,6 +405,11 @@ select.form-input{appearance:none;-webkit-appearance:none}
         <div class="menu-text">Достижения</div>
         <div class="menu-arrow">›</div>
       </div>
+      <div class="menu-item" onclick="showScreen('news')">
+        <div class="menu-icon">📰</div>
+        <div class="menu-text">Новости</div>
+        <div class="menu-arrow">›</div>
+      </div>
       <div class="menu-item" onclick="showScreen('support')">
         <div class="menu-icon">🛎️</div>
         <div class="menu-text">Техподдержка</div>
@@ -529,6 +534,19 @@ select.form-input{appearance:none;-webkit-appearance:none}
       <div id="cartItems" style="display:flex;flex-direction:column;gap:10px"></div>
       <div id="cartTotal" style="text-align:center;margin:16px 0;font-size:18px;font-weight:700;color:#F4C430"></div>
       <button class="btn btn-primary" id="checkoutBtn" onclick="shopCheckout()" style="display:none">💰 Купить</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== NEWS SCREEN ===== -->
+<div class="overlay" id="screenNews">
+  <div class="overlay-bg">
+    <div class="sub-header">
+      <button class="back-btn" onclick="showScreen('menu')">←</button>
+      <div class="sub-title">📰 Новости</div>
+    </div>
+    <div class="content fade-in" id="newsContent">
+      <div class="loader"></div>
     </div>
   </div>
 </div>
@@ -696,6 +714,7 @@ function showScreen(name) {
     if (name === 'cart') loadShopCart();
     if (name === 'purchaseHistory') loadPurchaseHistory();
     if (name === 'balanceHistory') loadBalanceHistory('all');
+    if (name === 'news') loadNews();
   }
 }
 function updateBalance() {
@@ -1224,6 +1243,61 @@ function createBubbles() {
   }
 }
 createBubbles();
+
+/* ============ NEWS ============ */
+async function loadNews() {
+  const el = document.getElementById('newsContent');
+  el.innerHTML = '<div class="loader"></div>';
+  try {
+    const r = await api('/api/news/status?telegram_id=' + APP.tgId, null, 'GET');
+    if (r.success) {
+      const isSub = r.is_subscribed;
+      const cost = r.daily_cost || 10;
+      let expiresText = '';
+      if (isSub && r.expires_at) {
+        const d = new Date(r.expires_at);
+        expiresText = d.toLocaleDateString('ru-RU', {day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'});
+      }
+      el.innerHTML = '<div class="card">' +
+        '<div style="text-align:center;margin-bottom:16px">' +
+        '<div style="font-size:48px">📰</div>' +
+        '<div style="font-size:20px;font-weight:700;color:#D4871C;margin-top:8px">Подписка на новости</div>' +
+        '<div style="font-size:13px;color:#C9A84C;margin-top:4px">Получайте эксклюзивные новости прямо в Telegram</div></div>' +
+        '<div class="stat-row"><span class="stat-label">Статус</span><span class="stat-val" style="color:' + (isSub ? '#4CAF50' : '#ff6b6b') + '">' + (isSub ? '✅ Активна' : '❌ Неактивна') + '</span></div>' +
+        (isSub ? '<div class="stat-row"><span class="stat-label">Действует до</span><span class="stat-val">' + expiresText + '</span></div>' : '') +
+        '<div class="stat-row"><span class="stat-label">Стоимость</span><span class="stat-val">' + cost + ' 🍺 / день</span></div>' +
+        '<div style="margin-top:16px">' +
+        (isSub ?
+          '<button class="btn btn-primary" style="margin-bottom:8px" onclick="newsRenew()">🔄 Продлить (+24ч за ' + cost + ' 🍺)</button>' +
+          '<button class="btn btn-danger" onclick="newsUnsubscribe()">❌ Отписаться</button>'
+          :
+          '<button class="btn btn-primary" onclick="newsSubscribe()">📰 Подписаться (' + cost + ' 🍺/день)</button>'
+        ) +
+        '</div></div>';
+    } else { throw new Error(); }
+  } catch(e) { el.innerHTML = '<div class="card"><div class="card-text">Ошибка загрузки</div></div>'; }
+}
+async function newsSubscribe() {
+  try {
+    const r = await api('/api/news/subscribe', {telegram_id: APP.tgId});
+    if (r.success) { APP.balance = r.new_balance; updateBalance(); toast('✅ Подписка оформлена!'); loadNews(); }
+    else { toast('❌ ' + (r.error || 'Ошибка')); }
+  } catch(e) { toast('❌ Ошибка соединения'); }
+}
+async function newsUnsubscribe() {
+  try {
+    const r = await api('/api/news/unsubscribe', {telegram_id: APP.tgId});
+    if (r.success) { toast('✅ Подписка отменена'); loadNews(); }
+    else { toast('❌ ' + (r.error || 'Ошибка')); }
+  } catch(e) { toast('❌ Ошибка соединения'); }
+}
+async function newsRenew() {
+  try {
+    const r = await api('/api/news/renew', {telegram_id: APP.tgId});
+    if (r.success) { APP.balance = r.new_balance; updateBalance(); toast('✅ Подписка продлена!'); loadNews(); }
+    else { toast('❌ ' + (r.error || 'Ошибка')); }
+  } catch(e) { toast('❌ Ошибка соединения'); }
+}
 
 /* ============ SHOP ============ */
 let shopAllItems = {};
