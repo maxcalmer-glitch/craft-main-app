@@ -74,9 +74,9 @@ class Config:
     AI_MODEL = 'gpt-4o-mini'
     AI_COST_PER_1K_TOKENS = 0.00015
     CAPS_PER_AI_REQUEST = 5
-    MAX_CONSECUTIVE_MESSAGES = 6
+    MAX_RAPID_MESSAGES = 6
     SPAM_BLOCK_DURATION_MINUTES = 30
-    SPAM_WINDOW_SECONDS = 3
+    RAPID_THRESHOLD_SECONDS = 2
     STARTING_UID = 666
     MAX_UID = 99999
 
@@ -814,20 +814,38 @@ def get_ai_response(user_id, message, telegram_id):
             conn.close()
             return {"success": False, "error": f"Недостаточно крышек! Нужно {config.CAPS_PER_AI_REQUEST} 🍺"}
         
-        # === ANTI-SPAM: Check rapid messages ===
+        # === ANTI-SPAM: Check rapid response pattern ===
+        # Get time of last AI response in this session
         cur.execute("""
-            SELECT COUNT(*) as cnt FROM ai_conversations
-            WHERE user_id = %s AND session_id = %s AND created_at > NOW() - INTERVAL '%s seconds'
-        """, (user_id, session['session_id'], config.SPAM_WINDOW_SECONDS))
-        recent = cur.fetchone()['cnt']
+            SELECT created_at FROM ai_conversations
+            WHERE user_id = %s AND session_id = %s AND response IS NOT NULL
+            ORDER BY created_at DESC LIMIT 1
+        """, (user_id, session['session_id']))
+        last_resp = cur.fetchone()
         
-        if recent >= config.MAX_CONSECUTIVE_MESSAGES:
-            block_until = datetime.utcnow() + timedelta(minutes=config.SPAM_BLOCK_DURATION_MINUTES)
-            cur.execute("UPDATE user_ai_sessions SET is_blocked = TRUE, block_expires_at = %s WHERE user_id = %s", (block_until, user_id))
-            conn.commit()
-            logger.warning(f"Spam block for user {user_id}: {recent} messages in {config.SPAM_WINDOW_SECONDS} sec")
+        rapid_count = session.get('message_count', 0)  # reuse message_count as rapid counter
+        
+        if last_resp:
+            last_resp_time = last_resp['created_at']
+            now = datetime.now(last_resp_time.tzinfo) if last_resp_time.tzinfo else datetime.utcnow()
+            seconds_since_response = (now - last_resp_time).total_seconds()
             
-            # Send block video via bot
+            if seconds_since_response < config.RAPID_THRESHOLD_SECONDS:
+                # User sent message less than 2 sec after AI response — increment rapid counter
+                rapid_count += 1
+                cur.execute("UPDATE user_ai_sessions SET message_count = %s WHERE user_id = %s", (rapid_count, user_id))
+            else:
+                # Normal pace — reset counter
+                if rapid_count > 0:
+                    rapid_count = 0
+                    cur.execute("UPDATE user_ai_sessions SET message_count = 0 WHERE user_id = %s", (user_id,))
+        
+        if rapid_count >= config.MAX_RAPID_MESSAGES:
+            block_until = datetime.utcnow() + timedelta(minutes=config.SPAM_BLOCK_DURATION_MINUTES)
+            cur.execute("UPDATE user_ai_sessions SET is_blocked = TRUE, block_expires_at = %s, message_count = 0 WHERE user_id = %s", (block_until, user_id))
+            conn.commit()
+            logger.warning(f"Spam block for user {user_id}: {rapid_count} rapid messages (< {config.RAPID_THRESHOLD_SECONDS}s after AI response)")
+            
             try:
                 send_telegram_video(telegram_id, config.BLOCK_VIDEO_FILE_ID, "⚠️ Вы заблокированы на 30 минут за спам")
             except Exception as e:
