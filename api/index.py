@@ -74,8 +74,9 @@ class Config:
     AI_MODEL = 'gpt-4o-mini'
     AI_COST_PER_1K_TOKENS = 0.00015
     CAPS_PER_AI_REQUEST = 5
-    MAX_CONSECUTIVE_MESSAGES = 3
+    MAX_CONSECUTIVE_MESSAGES = 6
     SPAM_BLOCK_DURATION_MINUTES = 30
+    SPAM_WINDOW_SECONDS = 3
     STARTING_UID = 666
     MAX_UID = 99999
 
@@ -816,15 +817,15 @@ def get_ai_response(user_id, message, telegram_id):
         # === ANTI-SPAM: Check rapid messages ===
         cur.execute("""
             SELECT COUNT(*) as cnt FROM ai_conversations
-            WHERE user_id = %s AND session_id = %s AND created_at > NOW() - INTERVAL '30 seconds'
-        """, (user_id, session['session_id']))
+            WHERE user_id = %s AND session_id = %s AND created_at > NOW() - INTERVAL '%s seconds'
+        """, (user_id, session['session_id'], config.SPAM_WINDOW_SECONDS))
         recent = cur.fetchone()['cnt']
         
         if recent >= config.MAX_CONSECUTIVE_MESSAGES:
             block_until = datetime.utcnow() + timedelta(minutes=config.SPAM_BLOCK_DURATION_MINUTES)
             cur.execute("UPDATE user_ai_sessions SET is_blocked = TRUE, block_expires_at = %s WHERE user_id = %s", (block_until, user_id))
             conn.commit()
-            logger.warning(f"Spam block for user {user_id}: {recent} messages in 30 sec")
+            logger.warning(f"Spam block for user {user_id}: {recent} messages in {config.SPAM_WINDOW_SECONDS} sec")
             
             # Send block video via bot
             try:
