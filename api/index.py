@@ -1448,8 +1448,9 @@ select.form-input{appearance:none;-webkit-appearance:none}
 .balance-amount{font-size:22px;font-weight:700;color:#F4C430;text-shadow:0 0 10px rgba(244,196,48,.4)}
 .balance-label{font-size:11px;color:#C9A84C}
 /* Achievement card unlocked/locked */
-.achievement-locked{opacity:.4;filter:grayscale(.6)}
-.achievement-unlocked{border-color:rgba(244,196,48,.5)!important}
+.achievement-locked{opacity:.6;filter:grayscale(.4)}
+.achievement-unlocked{border-color:rgba(244,196,48,.6)!important;box-shadow:0 0 15px rgba(244,196,48,.25)}
+.achievements-section-title{font-size:14px;font-weight:700;color:#C9A84C;margin:16px 0 8px;padding-left:4px;text-transform:uppercase;letter-spacing:1px}
 /* Referral stats */
 .ref-recent{padding:8px 0;border-bottom:1px solid rgba(212,135,28,.1)}
 .ref-recent-name{font-size:13px;color:#FFF8E7}
@@ -1461,6 +1462,23 @@ select.form-input{appearance:none;-webkit-appearance:none}
 .quiz-option.correct{background:rgba(46,125,50,.3);border-color:rgba(46,125,50,.5)}
 .quiz-option.wrong{background:rgba(198,40,40,.3);border-color:rgba(198,40,40,.5)}
 .quiz-question{font-size:15px;font-weight:600;color:#F4C430;margin:16px 0 10px}
+/* Premium Exam Styles */
+.exam-start-btn{display:block;width:100%;padding:16px;margin-top:20px;background:linear-gradient(135deg,#D4871C,#F4C430);border:none;border-radius:14px;color:#1A1209;font-size:18px;font-weight:700;cursor:pointer;position:relative;overflow:hidden;transition:all .3s ease;animation:examPulse 2s ease-in-out infinite}
+.exam-start-btn:hover{transform:scale(1.03);box-shadow:0 0 25px rgba(244,196,48,.4)}
+.exam-start-btn:active{transform:scale(.97)}
+.exam-start-btn::after{content:'';position:absolute;top:-50%;left:-50%;width:200%;height:200%;background:linear-gradient(45deg,transparent,rgba(255,255,255,.15),transparent);transform:rotate(45deg);animation:shimmer 3s infinite}
+@keyframes examPulse{0%,100%{box-shadow:0 0 10px rgba(244,196,48,.3)}50%{box-shadow:0 0 25px rgba(244,196,48,.5)}}
+@keyframes shimmer{0%{transform:translateX(-100%) rotate(45deg)}100%{transform:translateX(100%) rotate(45deg)}}
+@keyframes slideInRight{from{opacity:0;transform:translateX(60px)}to{opacity:1;transform:translateX(0)}}
+@keyframes scaleIn{from{opacity:0;transform:scale(.7)}to{opacity:1;transform:scale(1)}}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+@keyframes confettiDrop{0%{transform:translateY(-100vh) rotate(0deg);opacity:1}100%{transform:translateY(100vh) rotate(720deg);opacity:0}}
+@keyframes progressGlow{0%{background-position:0% 50%}100%{background-position:200% 50%}}
+.exam-progress-bar{height:6px;border-radius:3px;background:rgba(255,255,255,.1);margin-bottom:16px;overflow:hidden}
+.exam-progress-fill{height:100%;border-radius:3px;background:linear-gradient(90deg,#D4871C,#F4C430,#D4871C);background-size:200% 100%;animation:progressGlow 2s linear infinite;transition:width .5s ease}
+.exam-question-num{font-size:13px;color:#C9A84C;margin-bottom:4px}
+.exam-slide{animation:slideInRight .4s ease}
+.confetti-piece{position:fixed;width:10px;height:10px;top:-10px;z-index:10000;border-radius:2px;animation:confettiDrop 3s linear forwards}
 </style>
 </head>
 <body>
@@ -2005,7 +2023,8 @@ async function loadCabinet() {
         </div>
         <div class="card">
           <div class="card-title">🏆 Достижения</div>
-          <div style="margin-top:8px">${p.achievements && p.achievements.length > 0 ? p.achievements.map(a => '<span class="badge">'+a.icon+' '+a.name+'</span>').join('') : '<div class="card-text">Пока нет достижений</div>'}</div>
+          <div style="font-size:12px;color:#C9A84C;margin-top:4px">${p.achievements && p.achievements.length > 0 ? p.achievements.length + ' достижений получено' : ''}</div>
+          <div style="margin-top:8px">${p.achievements && p.achievements.length > 0 ? p.achievements.map(a => '<span class="badge" style="margin:3px">'+a.icon+' '+a.name+'</span>').join('') : '<div class="card-text">Выполняйте задания для получения наград!</div>'}</div>
         </div>
         <div class="card">
           <div class="card-title">🤝 Рефералы</div>
@@ -2215,36 +2234,86 @@ function openLesson(idx) {
   const el = document.getElementById('universityContent');
   let quiz = [];
   try { quiz = JSON.parse(l.exam_questions || '[]'); } catch(e) {}
-  let html = `<div class="card"><div style="display:flex;align-items:center;gap:10px;margin-bottom:14px"><button class="back-btn" onclick="loadUniversity()">←</button><div class="card-title" style="margin:0">📖 ${l.title}</div></div>
-    <div class="lesson-content">${l.content}</div></div>`;
+  let html = '<div class="card"><div style="display:flex;align-items:center;gap:10px;margin-bottom:14px"><button class="back-btn" onclick="loadUniversity()">←</button><div class="card-title" style="margin:0">📖 ' + l.title + '</div></div>' +
+    '<div class="lesson-content">' + l.content + '</div></div>';
   if (quiz.length > 0) {
-    html += '<div class="card"><div class="card-title">📝 Экзамен</div>';
-    quiz.forEach((q, qi) => {
-      html += '<div class="quiz-question">' + (qi+1) + '. ' + q.q + '</div>';
-      q.options.forEach((opt, oi) => {
-        html += '<div class="quiz-option" id="q'+qi+'o'+oi+'" onclick="checkQuiz('+qi+','+oi+','+q.correct+','+l.id+','+quiz.length+')">' + opt + '</div>';
-      });
-    });
-    html += '</div>';
+    html += '<div class="card" style="text-align:center"><button class="exam-start-btn" onclick="startExam(' + idx + ')">🎓 Начать экзамен</button></div>';
   }
   el.innerHTML = html;
 }
-var quizState = {};
-function checkQuiz(qi, oi, correct, lessonId, totalQ) {
-  if (!quizState[lessonId]) quizState[lessonId] = {answers:{}, correct:0, total:totalQ};
-  if (quizState[lessonId].answers[qi] !== undefined) return;
-  quizState[lessonId].answers[qi] = oi;
-  const opts = document.querySelectorAll('[id^="q'+qi+'o"]');
-  opts.forEach((o, i) => {
-    o.style.pointerEvents = 'none';
-    if (i === correct) o.classList.add('correct');
-    else if (i === oi) o.classList.add('wrong');
+var examState = null;
+function startExam(idx) {
+  const l = universityLessons[idx];
+  let quiz = [];
+  try { quiz = JSON.parse(l.exam_questions || '[]'); } catch(e) {}
+  if (!quiz.length) return;
+  examState = {lessonIdx: idx, lessonId: l.id, quiz: quiz, current: 0, correct: 0, answers: {}};
+  showExamQuestion();
+}
+function showExamQuestion() {
+  if (!examState) return;
+  const s = examState, q = s.quiz[s.current], total = s.quiz.length, num = s.current + 1;
+  const el = document.getElementById('universityContent');
+  const pct = Math.round((s.current / total) * 100);
+  let html = '<div class="card exam-slide">' +
+    '<div class="exam-progress-bar"><div class="exam-progress-fill" style="width:' + pct + '%"></div></div>' +
+    '<div class="exam-question-num">Вопрос ' + num + ' из ' + total + '</div>' +
+    '<div class="quiz-question">' + q.q + '</div>';
+  q.options.forEach(function(opt, oi) {
+    html += '<div class="quiz-option" id="eq' + s.current + 'o' + oi + '" onclick="examAnswer(' + oi + ',' + q.correct + ')">' + opt + '</div>';
   });
-  if (oi === correct) { quizState[lessonId].correct++; toast('✅ Правильно!'); }
-  else { toast('❌ Неверно!'); }
-  var st = quizState[lessonId];
-  if (Object.keys(st.answers).length === st.total) {
-    setTimeout(function(){ completeLesson(lessonId, st.correct, st.total); }, 800);
+  html += '</div>';
+  el.innerHTML = html;
+}
+function examAnswer(oi, correct) {
+  if (!examState || examState.answers[examState.current] !== undefined) return;
+  var s = examState;
+  s.answers[s.current] = oi;
+  var opts = document.querySelectorAll('[id^="eq' + s.current + 'o"]');
+  opts.forEach(function(o, i) {
+    o.style.pointerEvents = 'none';
+    if (i === correct) { o.classList.add('correct'); o.style.transition = 'all .3s ease'; }
+    else if (i === oi) { o.classList.add('wrong'); o.style.transition = 'all .3s ease'; }
+  });
+  if (oi === correct) s.correct++;
+  setTimeout(function() {
+    s.current++;
+    if (s.current < s.quiz.length) { showExamQuestion(); }
+    else { showExamResult(); }
+  }, 1000);
+}
+function showExamResult() {
+  var s = examState, total = s.quiz.length, score = s.correct;
+  var el = document.getElementById('universityContent');
+  var perfect = score === total;
+  var html = '<div class="card exam-slide" style="text-align:center;padding:32px 20px">' +
+    '<div class="exam-progress-bar"><div class="exam-progress-fill" style="width:100%"></div></div>' +
+    '<div style="font-size:64px;margin:16px 0;animation:scaleIn .5s ease">' + (perfect ? '🎓' : '📝') + '</div>' +
+    '<div style="font-size:24px;font-weight:700;color:' + (perfect ? '#F4C430' : '#C9A84C') + ';margin-bottom:8px">' + score + '/' + total + '</div>' +
+    '<div style="font-size:16px;color:#FFF8E7;margin-bottom:20px">' + (perfect ? '✅ Отлично! Все ответы верные!' : '❌ Попробуйте ещё раз') + '</div>';
+  if (perfect) {
+    html += '<button class="exam-start-btn" onclick="completeLesson(' + s.lessonId + ',' + score + ',' + total + ')">🎓 Завершить урок</button>';
+  } else {
+    html += '<button class="exam-start-btn" onclick="startExam(' + s.lessonIdx + ')" style="background:linear-gradient(135deg,#8B6914,#C9A84C)">🔄 Пройти заново</button>' +
+      '<button style="display:block;width:100%;padding:14px;margin-top:10px;background:transparent;border:1px solid rgba(212,135,28,.3);border-radius:14px;color:#C9A84C;font-size:15px;cursor:pointer" onclick="loadUniversity()">← К списку уроков</button>';
+  }
+  html += '</div>';
+  el.innerHTML = html;
+  if (perfect) launchConfetti();
+}
+function launchConfetti() {
+  var colors = ['#F4C430','#D4871C','#FFD700','#FF6B35','#4CAF50','#E91E63'];
+  for (var i = 0; i < 40; i++) {
+    var piece = document.createElement('div');
+    piece.className = 'confetti-piece';
+    piece.style.left = Math.random() * 100 + 'vw';
+    piece.style.background = colors[Math.floor(Math.random() * colors.length)];
+    piece.style.animationDuration = (2 + Math.random() * 2) + 's';
+    piece.style.animationDelay = Math.random() * 1.5 + 's';
+    piece.style.width = (6 + Math.random() * 8) + 'px';
+    piece.style.height = (6 + Math.random() * 8) + 'px';
+    document.body.appendChild(piece);
+    setTimeout(function(p){ p.remove(); }, 5000, piece);
   }
 }
 async function completeLesson(lessonId, score, total) {
@@ -2322,8 +2391,18 @@ async function loadAchievements() {
     const r = await api('/api/achievements/all?telegram_id=' + APP.tgId, null, 'GET');
     if (r.success) {
       const all = r.achievements;
-      el.innerHTML = '<div class="card" style="margin-bottom:12px"><div class="card-title">🏆 Достижения</div><div class="card-text">Получено: ' + all.filter(a=>a.earned).length + '/' + all.length + '</div></div>' +
-        all.map(a => `<div class="card ${a.earned ? 'achievement-unlocked' : 'achievement-locked'}"><div style="display:flex;align-items:center;gap:12px"><div style="font-size:32px">${a.icon}</div><div><div style="font-weight:600;color:#FFF8E7">${a.name}</div><div style="font-size:12px;color:#C9A84C">${a.description}</div><div style="font-size:11px;color:#D4871C;margin-top:2px">+${a.reward_caps} 🍺 ${a.earned ? '✅' : '🔒'}</div></div></div></div>`).join('');
+      const earned = all.filter(function(a){return a.earned});
+      const locked = all.filter(function(a){return !a.earned});
+      var achHtml = '<div class="card" style="margin-bottom:12px"><div class="card-title">🏆 Достижения</div><div class="card-text">Получено: ' + earned.length + '/' + all.length + '</div></div>';
+      if (earned.length > 0) {
+        achHtml += '<div class="achievements-section-title">✅ Получено</div>';
+        achHtml += earned.map(function(a){return '<div class="card achievement-unlocked"><div style="display:flex;align-items:center;gap:12px"><div style="font-size:32px">' + a.icon + '</div><div><div style="font-weight:600;color:#FFF8E7">' + a.name + '</div><div style="font-size:12px;color:#C9A84C">' + a.description + '</div><div style="font-size:11px;color:#4CAF50;margin-top:2px">+' + a.reward_caps + ' 🍺 ✅</div></div></div></div>'}).join('');
+      }
+      if (locked.length > 0) {
+        achHtml += '<div class="achievements-section-title">🔒 Доступно</div>';
+        achHtml += locked.map(function(a){return '<div class="card achievement-locked"><div style="display:flex;align-items:center;gap:12px"><div style="font-size:32px">' + a.icon + '</div><div><div style="font-weight:600;color:#FFF8E7">' + a.name + '</div><div style="font-size:12px;color:#C9A84C">' + a.description + '</div><div style="font-size:11px;color:#D4871C;margin-top:2px">+' + a.reward_caps + ' 🍺 🔒</div></div></div></div>'}).join('');
+      }
+      el.innerHTML = achHtml;
     } else { throw new Error(); }
   } catch(e) {
     if (!APP.profile) await loadCabinet();
@@ -3762,11 +3841,15 @@ def migrate_lessons():
             ('Альтернативные виды заработка',
              '🍺 <b>Урок 8: Альтернативные виды заработка</b>\n\n<b>Онлайн-заработок:</b>\n\n💻 <b>Фриланс</b>\nПрограммирование, дизайн, копирайтинг, SMM. Стабильный доход с минимальными рисками.\n\n📱 <b>Арбитраж трафика</b>\nПокупка и перепродажа трафика. Доход: от 50к до бесконечности.\n\n🎮 <b>NFT и GameFi</b>\nИгровые экономики и цифровые активы. Высокий риск, но и высокий потенциал.\n\n📊 <b>Дропшиппинг / E-commerce</b>\nОнлайн-торговля без склада. Маржа 20-40%.\n\n🔗 <b>Партнёрские программы</b>\nПродвигай чужие продукты за процент. Пассивный доход.\n\n<b>Оффлайн возможности:</b>\n\n🏪 <b>Вендинг</b>\nАвтоматы с товарами. Пассивный доход после настройки.\n\n🚗 <b>Каршеринг / Аренда</b>\nСдача авто или оборудования в аренду.\n\n🍕 <b>Фуд-бизнес</b>\nТочки питания, доставка. Стабильный спрос.\n\n<b>Золотое правило:</b>\nДиверсифицируй доходы. 2-3 источника дохода — это минимум для финансовой безопасности.\n\n💡 <i>Не существует "идеального" заработка — есть тот, который подходит именно тебе.</i>',
              '[{"q":"Какой минимум источников дохода рекомендуется?","options":["1","2-3","5-6","10"],"correct":1},{"q":"Что такое дропшиппинг?","options":["Торговля криптой","Онлайн-торговля без склада","Доставка еды","Фриланс"],"correct":1},{"q":"Какой вид заработка считается пассивным?","options":["Фриланс","Арбитраж трафика","Партнёрские программы","Программирование"],"correct":2}]',
-             20, 8)
+             20, 8),
+            ('Работа на Geotransfer',
+             '🍺 <b>Урок 9: Работа на Geotransfer</b>\n\n<b>Что такое Geotransfer?</b>\nGeotransfer — это проверенная процессинговая площадка с высокими ставками и надёжной системой гарантий.\n\n<b>Регистрация:</b>\n• Только по ссылке от администратора (действует 7 дней)\n• 30 дней неактивности = деактивация аккаунта\n• Обязательная настройка 2ФА при первом входе\n\n<b>Балансы и финансы:</b>\n• <b>Страховой депозит (СД)</b> — замораживается на 30 дней, гарантия для площадки\n• <b>Оборотный баланс</b> — рабочие средства для операций\n• Пополнение только через USDT TRC20 (проходит AML проверку)\n• Вывод: комиссия 6 USDT, СД выводится только через 30 дней\n\n<b>Сделки:</b>\n• Два типа: приём и выплаты\n• Споры: у тебя 30 минут на ответ, иначе автозакрытие не в твою пользу\n• Курс формируется по данным Рапира/HTX/Bybit\n\n<b>Реквизиты:</b>\n• Привязка устройств к аккаунту\n• Группы реквизитов для разных направлений\n• Автоматика: требуется Android 10+\n• Поддержка СБП и банковских карт\n\n<b>Выход в онлайн:</b>\n• Перед началом работы — обязательный тестовый платёж\n• Проверяет работоспособность реквизитов\n\n<b>Правила общения с операторами:</b>\n• Деловой стиль, без панибратства\n• Не спамить тегами (@) без необходимости\n• Чётко формулировать вопросы\n\n<b>Строгие правила:</b>\n• 🚫 Запрещена перепродажа токена (аккаунта)\n• 🚫 Запрещён скам в любой форме\n• Нарушение = бан без возврата страхового депозита\n\n<b>Ставки Geotransfer:</b>\n• Чеки 1-10к: 12-14%%\n• Чеки 10к+: 8-9%%\n• СИМ: 15%%\n• QR/НСПК: 12-13%%\n• БТ: 17%%\n\n💡 <i>Geotransfer — площадка для серьёзных людей. Соблюдай правила, работай чисто — и площадка будет работать на тебя.</i>',
+             '[{"q":"Как получить доступ к Geotransfer?","options":["Зарегистрироваться на сайте","Только по ссылке от администратора","Купить аккаунт","Написать в поддержку"],"correct":1},{"q":"Через сколько дней неактивности деактивируется аккаунт?","options":["7 дней","14 дней","30 дней","60 дней"],"correct":2},{"q":"Какая комиссия за вывод средств?","options":["Бесплатно","3 USDT","6 USDT","10 USDT"],"correct":2},{"q":"Сколько времени на ответ по спору?","options":["10 минут","30 минут","1 час","24 часа"],"correct":1},{"q":"Какая минимальная версия Android для автоматики?","options":["Android 7","Android 8","Android 9","Android 10"],"correct":3},{"q":"Что запрещено на площадке?","options":["Использование VPN","Перепродажа токена","Работа ночью","Использование СБП"],"correct":1}]',
+             35, 9)
         """)
         conn.commit()
         conn.close()
-        return jsonify({"success": True, "message": "Migrated 8 lessons successfully"})
+        return jsonify({"success": True, "message": "Migrated 9 lessons successfully"})
     except Exception as e:
         return jsonify({"success": False, "error": str(e)})
 
