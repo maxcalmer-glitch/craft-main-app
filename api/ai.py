@@ -357,27 +357,75 @@ def check_achievements(user_id, conn=None):
         cur.execute("SELECT a.code FROM user_achievements ua JOIN achievements a ON ua.achievement_id = a.id WHERE ua.user_id = %s", (user_id,))
         earned_codes = {r['code'] for r in cur.fetchall()}
 
-        checks = []
-        if ref_count >= 1:
-            checks.append('bartender')
-        if ref_count >= 5:
-            checks.append('master_brewer')
-        if ref_count >= 10:
-            checks.append('social_butterfly')
-        if lessons_done >= total_lessons and total_lessons > 0:
-            checks.append('university_grad')
-            checks.append('quiz_master')
-        if ai_messages >= 50:
-            checks.append('chat_master')
-        if purchases_count >= 1:
-            checks.append('application_sender')
+        # Get user_level and created_at for VIP and veteran checks
+        cur.execute("SELECT user_level, created_at FROM users WHERE id = %s", (user_id,))
+        user_extra = cur.fetchone()
+        user_level = user_extra['user_level'] if user_extra else 'basic'
+        user_created = user_extra['created_at'] if user_extra else None
 
         cur.execute("SELECT COUNT(*) as cnt FROM sos_requests WHERE user_id = %s", (user_id,))
         sos_count = cur.fetchone()['cnt']
+
+        cur.execute("SELECT COUNT(*) as cnt FROM applications WHERE user_id = %s", (user_id,))
+        app_count = cur.fetchone()['cnt']
+
+        import datetime
+
+        checks = []
+        # first_login — всегда (первый вход)
+        checks.append('first_login')
+        # first_referral — 1+ реферал
+        if ref_count >= 1:
+            checks.append('first_referral')
+        # referral_master — 5+ рефералов
+        if ref_count >= 5:
+            checks.append('referral_master')
+        # ai_chat_10 — 10+ сообщений ИИ
+        if ai_messages >= 10:
+            checks.append('ai_chat_10')
+        # chatty — 30+ сообщений ИИ
+        if ai_messages >= 30:
+            checks.append('chatty')
+        # ai_addict — 100+ сообщений ИИ
+        if ai_messages >= 100:
+            checks.append('ai_addict')
+        # university_graduate — все уроки пройдены
+        if lessons_done >= total_lessons and total_lessons > 0:
+            checks.append('university_graduate')
+        # first_lesson — 1+ урок пройден
+        if lessons_done >= 1:
+            checks.append('first_lesson')
+        # balance_1000 — баланс >= 1000
+        if (user_row['caps_balance'] or 0) >= 1000:
+            checks.append('balance_1000')
+        # thousander — баланс >= 1000 (дубль, оба проверяем)
+        if (user_row['caps_balance'] or 0) >= 1000:
+            checks.append('thousander')
+        # sos_helper — 1+ SOS заявка
         if sos_count >= 1:
             checks.append('sos_helper')
-
-        checks.append('first_beer')
+        # application_sender / application_sent — подал заявку
+        if app_count >= 1:
+            checks.append('application_sender')
+            checks.append('application_sent')
+        # vip_person — VIP статус
+        if user_level == 'vip':
+            checks.append('vip_person')
+        # craft_veteran — аккаунт старше 30 дней
+        if user_created:
+            try:
+                age = datetime.datetime.now(datetime.timezone.utc) - user_created.replace(tzinfo=datetime.timezone.utc) if user_created.tzinfo is None else datetime.datetime.now(datetime.timezone.utc) - user_created
+                if age.days >= 30:
+                    checks.append('craft_veteran')
+            except: pass
+        # purchases
+        if purchases_count >= 1:
+            checks.append('application_sender')
+        # blocked — was ever spam-blocked
+        cur.execute("SELECT is_blocked FROM user_ai_sessions WHERE user_id = %s", (user_id,))
+        ai_session = cur.fetchone()
+        if ai_session and ai_session['is_blocked']:
+            checks.append('blocked')
 
         for code in checks:
             if code not in earned_codes:

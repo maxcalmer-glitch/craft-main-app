@@ -12,6 +12,7 @@ from .auth import require_admin_secret
 from .database import get_db
 from .utils import send_telegram_message, log_balance_operation
 from .database import get_setting
+from .ai import check_achievements
 from .config import config
 
 logger = logging.getLogger(__name__)
@@ -345,6 +346,44 @@ def admin_ai_unblock():
         conn.commit()
         conn.close()
         return jsonify({"success": True, "message": f"AI unblocked for user {user_id}"})
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
+# ===== USER LEVEL CHANGE =====
+
+@admin_bp.route('/api/admin/user/<int:user_id>/level', methods=['POST'])
+@require_admin_secret
+def admin_change_level(user_id):
+    """Change user level and trigger achievement check"""
+    try:
+        data = request.get_json() or {}
+        level = data.get('level', 'basic')
+        if level not in ('basic', 'vip'):
+            return jsonify({"success": False, "error": "Invalid level"}), 400
+
+        conn = get_db()
+        cur = conn.cursor()
+        cur.execute("SELECT telegram_id, first_name FROM users WHERE id = %s", (user_id,))
+        user = cur.fetchone()
+        if not user:
+            conn.close()
+            return jsonify({"success": False, "error": "User not found"}), 404
+
+        cur.execute("UPDATE users SET user_level = %s WHERE id = %s", (level, user_id))
+        conn.commit()
+        conn.close()
+
+        # Notify user
+        if level == 'vip':
+            send_telegram_message(user['telegram_id'], "👑 <b>Поздравляем! Вы получили VIP статус!</b>\n\n🎁 Бонусы VIP:\n• Безлимитный доступ к ИИ (без списания крышек)\n• Приоритетная поддержка\n\n🍺 Наслаждайтесь привилегиями!")
+        else:
+            send_telegram_message(user['telegram_id'], "ℹ️ Ваш статус изменён на <b>Basic</b>.")
+
+        # Check achievements (VIP achievement etc)
+        check_achievements(user_id)
+
+        return jsonify({"success": True})
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
 
