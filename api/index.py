@@ -568,7 +568,11 @@ def init_database():
             ('Альтернативные виды заработка',
              '🍺 <b>Урок 8: Альтернативные виды заработка</b>\n\n<b>Онлайн-заработок:</b>\n\n💻 <b>Фриланс</b>\nПрограммирование, дизайн, копирайтинг, SMM. Стабильный доход с минимальными рисками.\n\n📱 <b>Арбитраж трафика</b>\nПокупка и перепродажа трафика. Доход: от 50к до бесконечности.\n\n🎮 <b>NFT и GameFi</b>\nИгровые экономики и цифровые активы. Высокий риск, но и высокий потенциал.\n\n📊 <b>Дропшиппинг / E-commerce</b>\nОнлайн-торговля без склада. Маржа 20-40%.\n\n🔗 <b>Партнёрские программы</b>\nПродвигай чужие продукты за процент. Пассивный доход.\n\n<b>Оффлайн возможности:</b>\n\n🏪 <b>Вендинг</b>\nАвтоматы с товарами. Пассивный доход после настройки.\n\n🚗 <b>Каршеринг / Аренда</b>\nСдача авто или оборудования в аренду.\n\n🍕 <b>Фуд-бизнес</b>\nТочки питания, доставка. Стабильный спрос.\n\n<b>Золотое правило:</b>\nДиверсифицируй доходы. 2-3 источника дохода — это минимум для финансовой безопасности.\n\n💡 <i>Не существует "идеального" заработка — есть тот, который подходит именно тебе.</i>',
              '[{"q":"Какой минимум источников дохода рекомендуется?","options":["1","2-3","5-6","10"],"correct":1},{"q":"Что такое дропшиппинг?","options":["Торговля криптой","Онлайн-торговля без склада","Доставка еды","Фриланс"],"correct":1},{"q":"Какой вид заработка считается пассивным?","options":["Фриланс","Арбитраж трафика","Партнёрские программы","Программирование"],"correct":2}]',
-             20, 8)
+             20, 8),
+            ('Работа на Geotransfer',
+             '🍺 <b>Урок 9: Работа на Geotransfer</b>\n\n<b>Что такое Geotransfer?</b>\nGeotransfer — это проверенная процессинговая площадка с высокими ставками и надёжной системой гарантий.\n\n<b>Регистрация:</b>\n• Только по ссылке от администратора (действует 7 дней)\n• 30 дней неактивности = деактивация аккаунта\n• Обязательная настройка 2ФА при первом входе\n\n<b>Балансы и финансы:</b>\n• <b>Страховой депозит (СД)</b> — замораживается на 30 дней, гарантия для площадки\n• <b>Оборотный баланс</b> — рабочие средства для операций\n• Пополнение только через USDT TRC20 (проходит AML проверку)\n• Вывод: комиссия 6 USDT, СД выводится только через 30 дней\n\n<b>Сделки:</b>\n• Два типа: приём и выплаты\n• Споры: у тебя 30 минут на ответ, иначе автозакрытие не в твою пользу\n• Курс формируется по данным Рапира/HTX/Bybit\n\n<b>Реквизиты:</b>\n• Привязка устройств к аккаунту\n• Группы реквизитов для разных направлений\n• Автоматика: требуется Android 10+\n• Поддержка СБП и банковских карт\n\n<b>Выход в онлайн:</b>\n• Перед началом работы — обязательный тестовый платёж\n• Проверяет работоспособность реквизитов\n\n<b>Правила общения с операторами:</b>\n• Деловой стиль, без панибратства\n• Не спамить тегами (@) без необходимости\n• Чётко формулировать вопросы\n\n<b>Строгие правила:</b>\n• 🚫 Запрещена перепродажа токена (аккаунта)\n• 🚫 Запрещён скам в любой форме\n• Нарушение = бан без возврата страхового депозита\n\n<b>Ставки Geotransfer:</b>\n• Чеки 1-10к: 12-14%\n• Чеки 10к+: 8-9%\n• СИМ: 15%\n• QR/НСПК: 12-13%\n• БТ: 17%\n\n💡 <i>Geotransfer — площадка для серьёзных людей. Соблюдай правила, работай чисто — и площадка будет работать на тебя.</i>',
+             '[{"q":"Как получить доступ к Geotransfer?","options":["Зарегистрироваться на сайте","Только по ссылке от администратора","Купить аккаунт","Написать в поддержку"],"correct":1},{"q":"Через сколько дней неактивности деактивируется аккаунт?","options":["7 дней","14 дней","30 дней","60 дней"],"correct":2},{"q":"Какая комиссия за вывод средств?","options":["Бесплатно","3 USDT","6 USDT","10 USDT"],"correct":2},{"q":"Сколько времени на ответ по спору?","options":["10 минут","30 минут","1 час","24 часа"],"correct":1},{"q":"Какая минимальная версия Android для автоматики?","options":["Android 7","Android 8","Android 9","Android 10"],"correct":3},{"q":"Что запрещено на площадке?","options":["Использование VPN","Перепродажа токена","Работа ночью","Использование СБП"],"correct":1}]',
+             30, 9)
             ON CONFLICT DO NOTHING
             """)
         
@@ -711,6 +715,17 @@ AI_SYSTEM_PROMPT = """Ты Михалыч — опытный ИИ-помощни
 4. Максимум 800 символов
 5. Стиль: неформальный, пивная тематика CRAFT
 6. Подписывайся "🍺 Михалыч" если ответ длинный
+
+ЗНАНИЯ О GEOTRANSFER (площадка):
+- Регистрация: только по ссылке от админа, ссылка действует 7 дней. 30 дней неактивности = деактивация аккаунта.
+- Главная страница: два баланса — страховой депозит (СД) и оборотный. Пополнение только USDT TRC20. Есть AML проверка. Вывод с комиссией 6 USDT. Страховой депозит можно вывести только через 30 дней.
+- Статистика: доступна полная история операций и статистика по обороту.
+- Сделки: приём и выплаты. Споры — 30 минут на ответ, иначе автозакрытие. Курс берётся с Рапира/HTX/Bybit.
+- Реквизиты: привязка устройств, группы реквизитов. Автоматика требует Android 10+. Поддержка СБП и карт.
+- Настройки: обязательная 2ФА, бот уведомлений в Telegram.
+- Выход в онлайн: сначала тестовый платёж для проверки реквизитов.
+- Коммуникация с операторами: деловой стиль, не спамить тегами, уважительное общение.
+- Правила: запрещена перепродажа токена (аккаунта), запрещён скам. Нарушение = бан без возврата СД.
 
 БАЗА ЗНАНИЙ:
 {knowledge_base}
@@ -1005,6 +1020,12 @@ def get_ai_response(user_id, message, telegram_id):
         
         conn.commit()
         conn.close()
+
+        # Проверка достижений после AI сообщения
+        try:
+            check_achievements(user_id)
+        except Exception:
+            pass
         
         logger.info(f"AI response for user {user_id}: tokens_in={tokens_in}, tokens_out={tokens_out}, cost=${cost_usd:.6f}")
         
@@ -1126,7 +1147,7 @@ def create_user(telegram_id, first_name='', last_name='', username='', referrer_
                 logger.error(f"Failed to send referral notifications: {e}")
         
         # Award first login achievement
-        cur.execute("SELECT id, reward_caps FROM achievements WHERE code = 'first_login'")
+        cur.execute("SELECT id, reward_caps FROM achievements WHERE code = 'first_beer'")
         ach = cur.fetchone()
         if ach:
             cur.execute("INSERT INTO user_achievements (user_id, achievement_id) VALUES (%s, %s) ON CONFLICT DO NOTHING", (user_id, ach['id']))
@@ -1135,6 +1156,13 @@ def create_user(telegram_id, first_name='', last_name='', username='', referrer_
         
         conn.commit()
         conn.close()
+
+        # Проверка достижений для реферера
+        if referrer_id:
+            try:
+                check_achievements(referrer_id)
+            except Exception:
+                pass
         
         return {"success": True, "user_id": user_id, "system_uid": system_uid, "caps_balance": starting_balance}
     except Exception as e:
@@ -1159,6 +1187,88 @@ def log_balance_operation(user_id, amount, operation, description, balance_after
     finally:
         if should_close:
             conn.close()
+
+def check_achievements(user_id, conn=None):
+    """Проверить и выдать достижения пользователю"""
+    should_close = False
+    if not conn:
+        conn = get_db()
+        should_close = True
+    try:
+        cur = conn.cursor()
+        awarded = []
+
+        # Получаем статистику пользователя
+        cur.execute("SELECT ai_requests_count, caps_balance FROM users WHERE id = %s", (user_id,))
+        user_row = cur.fetchone()
+        if not user_row:
+            return awarded
+
+        # Количество рефералов
+        cur.execute("SELECT COUNT(*) as cnt FROM referrals WHERE referrer_id = %s AND level = 1", (user_id,))
+        ref_count = cur.fetchone()['cnt']
+
+        # Количество пройденных уроков
+        cur.execute("SELECT COUNT(*) as cnt FROM university_progress WHERE user_id = %s AND completed = TRUE", (user_id,))
+        lessons_done = cur.fetchone()['cnt']
+
+        # Общее количество уроков
+        cur.execute("SELECT COUNT(*) as cnt FROM university_lessons WHERE is_active = TRUE", ())
+        total_lessons = cur.fetchone()['cnt']
+
+        # Количество AI сообщений
+        ai_messages = user_row['ai_requests_count'] or 0
+
+        # Количество покупок
+        cur.execute("SELECT COUNT(*) as cnt FROM shop_purchases WHERE user_id = %s", (user_id,))
+        purchases_count = cur.fetchone()['cnt']
+
+        # Уже полученные достижения
+        cur.execute("SELECT a.code FROM user_achievements ua JOIN achievements a ON ua.achievement_id = a.id WHERE ua.user_id = %s", (user_id,))
+        earned_codes = {r['code'] for r in cur.fetchall()}
+
+        # Правила достижений
+        checks = []
+        if ref_count >= 1:
+            checks.append('bartender')
+        if ref_count >= 5:
+            checks.append('master_brewer')
+        if ref_count >= 10:
+            checks.append('social_butterfly')
+        if lessons_done >= total_lessons and total_lessons > 0:
+            checks.append('university_grad')
+            checks.append('quiz_master')
+        if ai_messages >= 50:
+            checks.append('chat_master')
+        if purchases_count >= 1:
+            checks.append('application_sender')
+
+        for code in checks:
+            if code not in earned_codes:
+                cur.execute("SELECT id, reward_caps FROM achievements WHERE code = %s", (code,))
+                ach = cur.fetchone()
+                if ach:
+                    cur.execute("INSERT INTO user_achievements (user_id, achievement_id) VALUES (%s, %s) ON CONFLICT DO NOTHING", (user_id, ach['id']))
+                    if ach['reward_caps'] and ach['reward_caps'] > 0:
+                        cur.execute("UPDATE users SET caps_balance = caps_balance + %s, total_earned_caps = total_earned_caps + %s WHERE id = %s",
+                                    (ach['reward_caps'], ach['reward_caps'], user_id))
+                        cur.execute("SELECT caps_balance FROM users WHERE id = %s", (user_id,))
+                        bal = cur.fetchone()
+                        log_balance_operation(user_id, ach['reward_caps'], 'achievement_reward', f'Достижение: {code}', bal['caps_balance'] if bal else 0, conn)
+                    awarded.append(code)
+
+        if awarded and not should_close:
+            pass  # caller will commit
+        elif awarded and should_close:
+            conn.commit()
+        return awarded
+    except Exception as e:
+        logger.error(f"Check achievements error: {e}")
+        return []
+    finally:
+        if should_close:
+            conn.close()
+
 
 def get_user(telegram_id):
     try:
@@ -2087,10 +2197,10 @@ async function loadUniversity() {
       universityLessons = r.lessons;
       let html = '<div class="card" style="margin-bottom:16px"><div class="card-title">🏫 Университет CRAFT</div><div class="card-text">Изучайте уроки, сдавайте экзамены и зарабатывайте крышки!</div></div>';
       r.lessons.forEach((l, i) => {
-        html += `<div class="lesson-card" onclick="openLesson(${i})">
-          <div class="lesson-num">Урок ${l.order_index || i+1}</div>
+        html += `<div class="lesson-card" onclick="openLesson(${i})" style="${l.completed ? 'border-color:rgba(46,125,50,.5)' : ''}">
+          <div class="lesson-num">${l.completed ? '✅ ' : ''}Урок ${l.order_index || i+1}</div>
           <div class="lesson-title">${l.title}</div>
-          <div class="lesson-reward">Награда: ${l.reward_caps} 🍺</div>
+          <div class="lesson-reward">${l.completed ? 'Пройден ✓' : 'Награда: ' + l.reward_caps + ' 🍺'}</div>
         </div>`;
       });
       el.innerHTML = html;
@@ -2112,22 +2222,47 @@ function openLesson(idx) {
     quiz.forEach((q, qi) => {
       html += '<div class="quiz-question">' + (qi+1) + '. ' + q.q + '</div>';
       q.options.forEach((opt, oi) => {
-        html += '<div class="quiz-option" id="q'+qi+'o'+oi+'" onclick="checkQuiz('+qi+','+oi+','+q.correct+','+l.id+')">' + opt + '</div>';
+        html += '<div class="quiz-option" id="q'+qi+'o'+oi+'" onclick="checkQuiz('+qi+','+oi+','+q.correct+','+l.id+','+quiz.length+')">' + opt + '</div>';
       });
     });
     html += '</div>';
   }
   el.innerHTML = html;
 }
-function checkQuiz(qi, oi, correct, lessonId) {
+var quizState = {};
+function checkQuiz(qi, oi, correct, lessonId, totalQ) {
+  if (!quizState[lessonId]) quizState[lessonId] = {answers:{}, correct:0, total:totalQ};
+  if (quizState[lessonId].answers[qi] !== undefined) return;
+  quizState[lessonId].answers[qi] = oi;
   const opts = document.querySelectorAll('[id^="q'+qi+'o"]');
   opts.forEach((o, i) => {
     o.style.pointerEvents = 'none';
     if (i === correct) o.classList.add('correct');
     else if (i === oi) o.classList.add('wrong');
   });
-  if (oi === correct) toast('✅ Правильно!');
-  else toast('❌ Неверно!');
+  if (oi === correct) { quizState[lessonId].correct++; toast('✅ Правильно!'); }
+  else { toast('❌ Неверно!'); }
+  var st = quizState[lessonId];
+  if (Object.keys(st.answers).length === st.total) {
+    setTimeout(function(){ completeLesson(lessonId, st.correct, st.total); }, 800);
+  }
+}
+async function completeLesson(lessonId, score, total) {
+  if (score < total) {
+    toast('Попробуйте ещё раз! ' + score + '/' + total);
+    return;
+  }
+  const r = await api('/api/university/complete', {telegram_id: APP.tgId, lesson_id: lessonId, score: score, total: total});
+  if (r.success && !r.already_completed) {
+    var overlay = document.createElement('div');
+    overlay.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.85);display:flex;align-items:center;justify-content:center;z-index:9999;animation:fadeIn .3s';
+    overlay.innerHTML = '<div style="text-align:center;animation:scaleIn .5s"><div style="font-size:80px;margin-bottom:16px">🎓✅</div><div style="font-size:24px;font-weight:700;color:#F4C430;margin-bottom:8px">Урок пройден!</div><div style="font-size:16px;color:#FFF8E7">+' + (r.reward||0) + ' 🍺 крышек</div><button onclick="this.parentElement.parentElement.remove();loadUniversity()" style="margin-top:20px;padding:12px 32px;background:linear-gradient(135deg,#D4871C,#F4C430);border:none;border-radius:12px;color:#1A1209;font-weight:700;font-size:16px;cursor:pointer">Продолжить</button></div>';
+    document.body.appendChild(overlay);
+  } else if (r.already_completed) {
+    toast('Урок уже был пройден ранее!');
+  } else {
+    toast(r.error || 'Ошибка');
+  }
 }
 
 /* ============ REFERRAL ============ */
@@ -2690,14 +2825,81 @@ def api_submit_support():
 @require_telegram_auth
 def api_university_lessons():
     try:
+        user = get_user(request.telegram_user_id or request.args.get('telegram_id', ''))
         conn = get_db()
         cur = conn.cursor()
-        cur.execute("SELECT id, title, content, reward_caps, order_index FROM university_lessons WHERE is_active = TRUE ORDER BY order_index ASC")
+        cur.execute("SELECT id, title, content, exam_questions, reward_caps, order_index FROM university_lessons WHERE is_active = TRUE ORDER BY order_index ASC")
         lessons = [dict(r) for r in cur.fetchall()]
+        # Добавляем прогресс пользователя
+        if user:
+            cur.execute("SELECT lesson_id, completed, score FROM university_progress WHERE user_id = %s", (user['id'],))
+            progress = {r['lesson_id']: {'completed': r['completed'], 'score': r['score']} for r in cur.fetchall()}
+            for l in lessons:
+                p = progress.get(l['id'], {})
+                l['completed'] = p.get('completed', False)
+                l['score'] = p.get('score', 0)
         conn.close()
         return jsonify({"success": True, "lessons": lessons})
     except Exception as e:
         return jsonify({"success": False, "error": "Failed to load lessons"}), 500
+
+@app.route('/api/university/complete', methods=['POST'])
+@require_telegram_auth
+def api_university_complete():
+    """Завершить урок с результатами квиза"""
+    try:
+        data = request.get_json() or {}
+        telegram_id = data.get('telegram_id', '')
+        lesson_id = data.get('lesson_id')
+        score = data.get('score', 0)
+        total = data.get('total', 0)
+        if not telegram_id or not lesson_id:
+            return jsonify({"success": False, "error": "lesson_id required"}), 400
+        user = get_user(telegram_id)
+        if not user:
+            return jsonify({"success": False, "error": "User not found"}), 404
+        conn = get_db()
+        cur = conn.cursor()
+        # Проверяем что урок существует
+        cur.execute("SELECT id, reward_caps FROM university_lessons WHERE id = %s AND is_active = TRUE", (lesson_id,))
+        lesson = cur.fetchone()
+        if not lesson:
+            conn.close()
+            return jsonify({"success": False, "error": "Lesson not found"}), 404
+        # Проверяем не пройден ли уже
+        cur.execute("SELECT completed FROM university_progress WHERE user_id = %s AND lesson_id = %s", (user['id'], lesson_id))
+        existing = cur.fetchone()
+        if existing and existing['completed']:
+            conn.close()
+            return jsonify({"success": True, "already_completed": True, "message": "Урок уже пройден!"})
+        # Нужно правильно ответить на все вопросы
+        if total > 0 and score < total:
+            conn.close()
+            return jsonify({"success": False, "error": f"Ответьте правильно на все вопросы ({score}/{total})"})
+        # Записываем прогресс
+        cur.execute("""
+            INSERT INTO university_progress (user_id, lesson_id, completed, score, attempts, completed_at)
+            VALUES (%s, %s, TRUE, %s, 1, NOW())
+            ON CONFLICT (user_id, lesson_id) DO UPDATE SET completed = TRUE, score = %s, attempts = university_progress.attempts + 1, completed_at = NOW()
+        """, (user['id'], lesson_id, score, score))
+        # Начисляем награду
+        reward = lesson['reward_caps'] or 0
+        if reward > 0 and not (existing and existing['completed']):
+            cur.execute("UPDATE users SET caps_balance = caps_balance + %s, total_earned_caps = total_earned_caps + %s WHERE id = %s", (reward, reward, user['id']))
+            cur.execute("SELECT caps_balance FROM users WHERE id = %s", (user['id'],))
+            bal = cur.fetchone()
+            log_balance_operation(user['id'], reward, 'lesson_reward', f'Урок пройден: #{lesson_id}', bal['caps_balance'] if bal else 0, conn)
+        conn.commit()
+        conn.close()
+        # Проверка достижений после завершения урока
+        try:
+            check_achievements(user['id'])
+        except Exception:
+            pass
+        return jsonify({"success": True, "reward": reward, "message": "Урок пройден! 🎓✅"})
+    except Exception as e:
+        logger.error(f"University complete error: {e}")
+        return jsonify({"success": False, "error": "Ошибка сохранения"}), 500
 
 @app.route('/api/user/profile', methods=['GET'])
 @require_telegram_auth
@@ -2983,6 +3185,11 @@ def api_shop_checkout():
                         send_telegram_message(int(telegram_id), msg)
                 except Exception as e:
                     logger.error(f"File delivery error: {e}")
+        # Проверка достижений после покупки
+        try:
+            check_achievements(user['id'])
+        except Exception:
+            pass
         return jsonify({"success": True, "total_spent": total, "new_balance": user['caps_balance'] - total})
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
@@ -3840,6 +4047,32 @@ def admin_user_chat_send():
         return jsonify({"success": True, "telegram_response": resp.json()})
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
+@app.route('/api/admin/ai/unblock', methods=['POST'])
+@require_admin_secret
+def admin_ai_unblock():
+    """Снять блокировку AI чата для пользователя"""
+    try:
+        data = request.json or {}
+        user_id = data.get('user_id')
+        if not user_id:
+            return jsonify({"success": False, "error": "user_id required"}), 400
+        conn = get_db()
+        cur = conn.cursor()
+        cur.execute("SELECT id FROM users WHERE id = %s", (user_id,))
+        if not cur.fetchone():
+            conn.close()
+            return jsonify({"success": False, "error": "User not found"}), 404
+        cur.execute(
+            "UPDATE user_ai_sessions SET is_blocked = FALSE, message_count = 0, block_expires_at = NULL WHERE user_id = %s",
+            (user_id,)
+        )
+        conn.commit()
+        conn.close()
+        return jsonify({"success": True, "message": f"AI unblocked for user {user_id}"})
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
 
 # Vercel handler
 if __name__ == '__main__':
