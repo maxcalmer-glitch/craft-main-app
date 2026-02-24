@@ -37,10 +37,22 @@ def api_init():
             try: check_achievements(user['id'])
             except: pass
 
+            # Check news subscription status
+            is_news_sub = False
+            try:
+                conn2 = get_db()
+                cur2 = conn2.cursor()
+                cur2.execute("SELECT is_active FROM news_subscriptions WHERE user_id = %s", (user['id'],))
+                ns = cur2.fetchone()
+                is_news_sub = bool(ns and ns['is_active'])
+                conn2.close()
+            except: pass
+
             return jsonify({
                 "success": True, "system_uid": user['system_uid'],
                 "caps_balance": user['caps_balance'],
-                "total_referrals": user.get('total_referrals_count', 0), "exists": True
+                "total_referrals": user.get('total_referrals_count', 0), "exists": True,
+                "is_news_subscriber": is_news_sub
             })
 
         result = create_user(
@@ -193,26 +205,24 @@ def api_news_subscribe():
         conn = get_db()
         cur = conn.cursor()
 
-        # Deduct caps
+        # Deduct first day caps
         cur.execute("UPDATE users SET caps_balance = caps_balance - %s, total_spent_caps = total_spent_caps + %s WHERE id = %s",
                     (daily_cost, daily_cost, user['id']))
         cur.execute("SELECT caps_balance FROM users WHERE id = %s", (user['id'],))
         new_balance = cur.fetchone()['caps_balance']
-        log_balance_operation(user['id'], -daily_cost, 'news_subscription', 'Подписка на новости (24ч)', new_balance, conn)
+        log_balance_operation(user['id'], -daily_cost, 'news_subscription', 'Подписка на новости', new_balance, conn)
 
-        # Create/update subscription
+        # Create/update subscription (indefinite - no expires_at)
         cur.execute("""
             INSERT INTO news_subscriptions (user_id, telegram_id, is_active, subscribed_at, expires_at)
-            VALUES (%s, %s, TRUE, NOW(), NOW() + INTERVAL '24 hours')
-            ON CONFLICT (user_id) DO UPDATE SET is_active = TRUE, subscribed_at = NOW(), expires_at = NOW() + INTERVAL '24 hours'
-            RETURNING expires_at
+            VALUES (%s, %s, TRUE, NOW(), NULL)
+            ON CONFLICT (user_id) DO UPDATE SET is_active = TRUE, subscribed_at = NOW(), expires_at = NULL
         """, (user['id'], telegram_id))
-        expires_at = cur.fetchone()['expires_at']
 
         conn.commit()
         conn.close()
 
-        return jsonify({"success": True, "expires_at": expires_at.isoformat(), "new_balance": new_balance})
+        return jsonify({"success": True, "new_balance": new_balance})
     except Exception as e:
         logger.error(f"News subscribe error: {e}")
         return jsonify({"success": False, "error": str(e)}), 500
@@ -256,67 +266,17 @@ def api_news_status():
 
         conn = get_db()
         cur = conn.cursor()
-        cur.execute("SELECT is_active, expires_at FROM news_subscriptions WHERE user_id = %s", (user['id'],))
+        cur.execute("SELECT is_active FROM news_subscriptions WHERE user_id = %s", (user['id'],))
         sub = cur.fetchone()
         conn.close()
 
-        if sub and sub['is_active'] and sub['expires_at']:
-            return jsonify({
-                "success": True,
-                "is_subscribed": True,
-                "expires_at": sub['expires_at'].isoformat(),
-                "daily_cost": daily_cost
-            })
+        if sub and sub['is_active']:
+            return jsonify({"success": True, "is_subscribed": True, "daily_cost": daily_cost})
 
-        return jsonify({"success": True, "is_subscribed": False, "expires_at": None, "daily_cost": daily_cost})
+        return jsonify({"success": True, "is_subscribed": False, "daily_cost": daily_cost})
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
 
 
-@user_bp.route('/api/news/renew', methods=['POST'])
-@require_telegram_auth
-def api_news_renew():
-    try:
-        data = request.get_json() or {}
-        telegram_id = data.get('telegram_id', '')
-        if not telegram_id:
-            return jsonify({"success": False, "error": "Telegram ID required"}), 400
-        user = get_user(telegram_id)
-        if not user:
-            return jsonify({"success": False, "error": "User not found"}), 404
 
-        daily_cost = int(get_setting('news_daily_cost', '10'))
-        if user['caps_balance'] < daily_cost:
-            return jsonify({"success": False, "error": f"Недостаточно крышек! Нужно {daily_cost} 🍺"}), 400
-
-        conn = get_db()
-        cur = conn.cursor()
-
-        cur.execute("SELECT is_active, expires_at FROM news_subscriptions WHERE user_id = %s", (user['id'],))
-        sub = cur.fetchone()
-        if not sub:
-            conn.close()
-            return jsonify({"success": False, "error": "Подписка не найдена. Сначала подпишитесь."}), 400
-
-        # Deduct caps
-        cur.execute("UPDATE users SET caps_balance = caps_balance - %s, total_spent_caps = total_spent_caps + %s WHERE id = %s",
-                    (daily_cost, daily_cost, user['id']))
-        cur.execute("SELECT caps_balance FROM users WHERE id = %s", (user['id'],))
-        new_balance = cur.fetchone()['caps_balance']
-        log_balance_operation(user['id'], -daily_cost, 'news_renewal', 'Продление подписки на новости (24ч)', new_balance, conn)
-
-        # Extend by 24h from current expires_at or now
-        cur.execute("""
-            UPDATE news_subscriptions SET is_active = TRUE,
-            expires_at = GREATEST(expires_at, NOW()) + INTERVAL '24 hours'
-            WHERE user_id = %s RETURNING expires_at
-        """, (user['id'],))
-        expires_at = cur.fetchone()['expires_at']
-
-        conn.commit()
-        conn.close()
-
-        return jsonify({"success": True, "expires_at": expires_at.isoformat(), "new_balance": new_balance})
-    except Exception as e:
-        logger.error(f"News renew error: {e}")
-        return jsonify({"success": False, "error": str(e)}), 500
+# renew endpoint removed - subscription is now indefinite

@@ -602,6 +602,12 @@ async function startApp() {
     const r = await api('/api/init', d);
     if (r && r.success) {
       APP.uid = r.system_uid; APP.balance = r.caps_balance;
+      APP.isNewsSubscriber = r.is_news_subscriber || false;
+      // Track visits for news popup
+      const visitKey = 'craft_visit_count_' + APP.tgId;
+      const visits = parseInt(localStorage.getItem(visitKey) || '0') + 1;
+      localStorage.setItem(visitKey, visits);
+      APP.visitCount = visits;
     }
   } catch(e) { console.error('Init failed', e); }
   
@@ -687,6 +693,31 @@ function enterApp() {
   document.getElementById('userNickname').textContent = APP.firstName || '';
   document.getElementById('screenMain').classList.add('active');
   APP.ready = true;
+  
+  // Show news subscription popup on 2nd+ visit if not subscribed
+  if (APP.visitCount >= 2 && !APP.isNewsSubscriber) {
+    setTimeout(() => showNewsPopup(), 800);
+  }
+}
+
+function showNewsPopup() {
+  const existing = document.getElementById('newsPopupOverlay');
+  if (existing) existing.remove();
+  
+  const overlay = document.createElement('div');
+  overlay.id = 'newsPopupOverlay';
+  overlay.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.7);z-index:9999;display:flex;align-items:center;justify-content:center;animation:fadeIn 0.3s ease';
+  overlay.innerHTML = `
+    <div style="background:linear-gradient(135deg,#1A0E0A,#2A1810);border:1px solid rgba(212,135,28,0.3);border-radius:16px;padding:24px;margin:20px;max-width:340px;text-align:center;animation:slideInUp 0.4s ease">
+      <div style="font-size:36px;margin-bottom:12px">📰</div>
+      <h3 style="color:#F4C430;margin:0 0 8px;font-size:18px">Подпишись на новости!</h3>
+      <p style="color:#ccc;font-size:14px;margin:0 0 16px;line-height:1.4">Ежедневный дайджест по рынку: ситуация, методы, мануалы. Всё важное — без воды.</p>
+      <p style="color:#D4871C;font-size:13px;margin:0 0 16px">💰 10 крышек/день</p>
+      <button onclick="showScreen('news');document.getElementById('newsPopupOverlay').remove()" style="background:linear-gradient(135deg,#D4871C,#F4C430);color:#1A0E0A;border:none;padding:12px 24px;border-radius:10px;font-weight:bold;font-size:15px;cursor:pointer;width:100%;margin-bottom:8px">📰 Подписаться</button>
+      <button onclick="document.getElementById('newsPopupOverlay').remove()" style="background:transparent;color:#888;border:none;padding:8px;font-size:13px;cursor:pointer;width:100%">Позже</button>
+    </div>
+  `;
+  document.body.appendChild(overlay);
 }
 
 /* ============ NAVIGATION ============ */

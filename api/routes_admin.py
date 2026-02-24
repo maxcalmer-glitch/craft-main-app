@@ -10,7 +10,8 @@ import requests as http_requests
 from flask import Blueprint, request, jsonify
 from .auth import require_admin_secret
 from .database import get_db
-from .utils import send_telegram_message
+from .utils import send_telegram_message, log_balance_operation
+from .database import get_setting
 from .config import config
 
 logger = logging.getLogger(__name__)
@@ -403,7 +404,7 @@ def admin_news_broadcast():
         cur = conn.cursor()
         cur.execute("""
             SELECT telegram_id FROM news_subscriptions
-            WHERE is_active = TRUE AND expires_at > NOW()
+            WHERE is_active = TRUE
         """)
         subscribers = cur.fetchall()
         conn.close()
@@ -437,7 +438,7 @@ def admin_news_subscribers():
                    u.first_name, u.username
             FROM news_subscriptions ns
             JOIN users u ON ns.user_id = u.id
-            WHERE ns.is_active = TRUE AND ns.expires_at > NOW()
+            WHERE ns.is_active = TRUE
             ORDER BY ns.subscribed_at DESC
         """)
         rows = cur.fetchall()
@@ -452,5 +453,48 @@ def admin_news_subscribers():
                 "expires_at": r['expires_at'].isoformat() if r['expires_at'] else None
             })
         return jsonify({"success": True, "subscribers": subscribers, "total": len(subscribers)})
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
+@admin_bp.route('/api/admin/news/charge-daily', methods=['POST'])
+@require_admin_secret
+def admin_news_charge_daily():
+    """Daily cron: charge subscribers, deactivate those without balance"""
+    try:
+        daily_cost = int(get_setting('news_daily_cost', '10'))
+        conn = get_db()
+        cur = conn.cursor()
+        
+        cur.execute("""
+            SELECT ns.id, ns.user_id, ns.telegram_id, u.caps_balance
+            FROM news_subscriptions ns
+            JOIN users u ON ns.user_id = u.id
+            WHERE ns.is_active = TRUE
+        """)
+        subs = cur.fetchall()
+        
+        charged = 0
+        deactivated = 0
+        for sub in subs:
+            if sub['caps_balance'] >= daily_cost:
+                cur.execute("UPDATE users SET caps_balance = caps_balance - %s, total_spent_caps = total_spent_caps + %s WHERE id = %s",
+                           (daily_cost, daily_cost, sub['user_id']))
+                cur.execute("SELECT caps_balance FROM users WHERE id = %s", (sub['user_id'],))
+                new_bal = cur.fetchone()['caps_balance']
+                log_balance_operation(sub['user_id'], -daily_cost, 'news_daily_charge', 'Ежедневная подписка на новости', new_bal, conn)
+                charged += 1
+            else:
+                cur.execute("UPDATE news_subscriptions SET is_active = FALSE WHERE id = %s", (sub['id'],))
+                # Notify user
+                try:
+                    send_telegram_message(sub['telegram_id'], 
+                        "📰 Подписка на новости отключена — недостаточно крышек.\nПополните баланс и подпишитесь снова в разделе Новости.")
+                except: pass
+                deactivated += 1
+        
+        conn.commit()
+        conn.close()
+        return jsonify({"success": True, "charged": charged, "deactivated": deactivated, "daily_cost": daily_cost})
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
