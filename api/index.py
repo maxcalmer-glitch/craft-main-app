@@ -810,6 +810,7 @@ def get_ai_response(user_id, message, telegram_id):
         cur.execute("SELECT caps_balance, user_level FROM users WHERE id = %s", (user_id,))
         user = cur.fetchone()
         is_vip = user and user.get('user_level') == 'vip'
+        logger.info(f"VIP check: user_id={user_id}, user_level={user.get('user_level') if user else None}, is_vip={is_vip}")
         if not user or (not is_vip and user['caps_balance'] < config.CAPS_PER_AI_REQUEST):
             conn.close()
             return {"success": False, "error": f"Недостаточно крышек! Нужно {config.CAPS_PER_AI_REQUEST} 🍺"}
@@ -940,6 +941,7 @@ def get_ai_response(user_id, message, telegram_id):
         # === SAVE CONVERSATION ===
         # VIP users don't spend caps - define BEFORE using
         caps_cost = 0 if is_vip else config.CAPS_PER_AI_REQUEST
+        logger.info(f"Caps cost calc: is_vip={is_vip}, caps_cost={caps_cost}, user_id={user_id}")
         
         cur.execute("""
             INSERT INTO ai_conversations (user_id, session_id, message, response, caps_spent, tokens_used, cost_usd)
@@ -2053,7 +2055,7 @@ async function sendChat() {
     typingEl.remove();
     if (r.success) {
       addChatMsg(r.response, 'bot');
-      APP.balance = Math.max(0, APP.balance - (r.caps_spent || 5));
+      APP.balance = Math.max(0, APP.balance - (r.caps_spent !== undefined ? r.caps_spent : 5));
       updateBalance();
     } else {
       addChatMsg('❌ ' + (r.error || 'Ошибка'), 'bot');
