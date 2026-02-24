@@ -59,8 +59,13 @@ def api_submit_application():
                 ref_display = f"@{ref_user['username']}" if ref_user.get('username') else ref_user['first_name']
                 msg += f"\n🤝 <b>Привел:</b> {ref_display} (#{ref_user['system_uid']})"
 
-        for k, v in sanitized_form.items():
-            msg += f"\n• <b>{k}:</b> {v}"
+        # Format answers only (numbered list, no questions)
+        answer_num = 1
+        for i in range(1, 20):
+            answer_key = f'a{i}'
+            if answer_key in sanitized_form:
+                msg += f"\n{answer_num}. {sanitized_form[answer_key]}"
+                answer_num += 1
         send_to_admin_chat(config.ADMIN_CHAT_APPLICATIONS, msg)
 
         return jsonify({"success": True, "application_id": app_id, "message": "Заявка отправлена!"})
