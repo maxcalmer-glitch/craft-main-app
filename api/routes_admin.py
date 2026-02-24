@@ -506,7 +506,7 @@ def admin_news_charge_daily():
         cur = conn.cursor()
         
         cur.execute("""
-            SELECT ns.id, ns.user_id, ns.telegram_id, u.caps_balance
+            SELECT ns.id, ns.user_id, ns.telegram_id, u.caps_balance, u.user_level
             FROM news_subscriptions ns
             JOIN users u ON ns.user_id = u.id
             WHERE ns.is_active = TRUE
@@ -515,7 +515,12 @@ def admin_news_charge_daily():
         
         charged = 0
         deactivated = 0
+        skipped_vip = 0
         for sub in subs:
+            # VIP users get free news
+            if sub.get('user_level') == 'vip':
+                skipped_vip += 1
+                continue
             if sub['caps_balance'] >= daily_cost:
                 cur.execute("UPDATE users SET caps_balance = caps_balance - %s, total_spent_caps = total_spent_caps + %s WHERE id = %s",
                            (daily_cost, daily_cost, sub['user_id']))

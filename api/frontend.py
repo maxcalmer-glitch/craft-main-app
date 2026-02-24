@@ -603,6 +603,7 @@ async function startApp() {
     if (r && r.success) {
       APP.uid = r.system_uid; APP.balance = r.caps_balance;
       APP.isNewsSubscriber = r.is_news_subscriber || false;
+      APP.userLevel = r.user_level || 'basic';
       // Track visits for news popup
       const visitKey = 'craft_visit_count_' + APP.tgId;
       const visits = parseInt(localStorage.getItem(visitKey) || '0') + 1;
@@ -1295,12 +1296,12 @@ async function loadNews() {
         '<div style="font-size:20px;font-weight:700;color:#D4871C;margin-top:8px">Подписка на новости</div>' +
         '<div style="font-size:13px;color:#C9A84C;margin-top:4px">Получайте эксклюзивные новости прямо в Telegram</div></div>' +
         '<div class="stat-row"><span class="stat-label">Статус</span><span class="stat-val" style="color:' + (isSub ? '#4CAF50' : '#ff6b6b') + '">' + (isSub ? '✅ Активна' : '❌ Неактивна') + '</span></div>' +
-        '<div class="stat-row"><span class="stat-label">Стоимость</span><span class="stat-val">' + cost + ' 🍺 / день</span></div>' +
+        '<div class="stat-row"><span class="stat-label">Стоимость</span><span class="stat-val">' + (APP.userLevel === 'vip' ? '👑 Бесплатно (VIP)' : cost + ' 🍺 / день') + '</span></div>' +
         '<div style="margin-top:16px">' +
         (isSub ?
           '<button class="btn btn-danger" onclick="newsUnsubscribe()">❌ Отписаться</button>'
           :
-          '<button class="btn btn-primary" onclick="newsSubscribe()">📰 Подписаться (' + cost + ' 🍺/день)</button>'
+          '<button class="btn btn-primary" onclick="newsSubscribe()">📰 Подписаться' + (APP.userLevel === 'vip' ? ' (бесплатно)' : ' (' + cost + ' 🍺/день)') + '</button>'
         ) +
         '</div></div>';
     } else { throw new Error(); }

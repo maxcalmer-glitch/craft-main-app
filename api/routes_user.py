@@ -52,7 +52,8 @@ def api_init():
                 "success": True, "system_uid": user['system_uid'],
                 "caps_balance": user['caps_balance'],
                 "total_referrals": user.get('total_referrals_count', 0), "exists": True,
-                "is_news_subscriber": is_news_sub
+                "is_news_subscriber": is_news_sub,
+                "user_level": user.get('user_level', 'basic')
             })
 
         result = create_user(
@@ -199,18 +200,23 @@ def api_news_subscribe():
             return jsonify({"success": False, "error": "User not found"}), 404
 
         daily_cost = int(get_setting('news_daily_cost', '10'))
-        if user['caps_balance'] < daily_cost:
-            return jsonify({"success": False, "error": f"Недостаточно крышек! Нужно {daily_cost} 🍺"}), 400
+        is_vip = user.get('user_level') == 'vip'
+
+        if not is_vip:
+            if user['caps_balance'] < daily_cost:
+                return jsonify({"success": False, "error": f"Недостаточно крышек! Нужно {daily_cost} 🍺"}), 400
 
         conn = get_db()
         cur = conn.cursor()
 
-        # Deduct first day caps
-        cur.execute("UPDATE users SET caps_balance = caps_balance - %s, total_spent_caps = total_spent_caps + %s WHERE id = %s",
-                    (daily_cost, daily_cost, user['id']))
-        cur.execute("SELECT caps_balance FROM users WHERE id = %s", (user['id'],))
-        new_balance = cur.fetchone()['caps_balance']
-        log_balance_operation(user['id'], -daily_cost, 'news_subscription', 'Подписка на новости', new_balance, conn)
+        # Deduct first day caps (free for VIP)
+        new_balance = user['caps_balance']
+        if not is_vip:
+            cur.execute("UPDATE users SET caps_balance = caps_balance - %s, total_spent_caps = total_spent_caps + %s WHERE id = %s",
+                        (daily_cost, daily_cost, user['id']))
+            cur.execute("SELECT caps_balance FROM users WHERE id = %s", (user['id'],))
+            new_balance = cur.fetchone()['caps_balance']
+            log_balance_operation(user['id'], -daily_cost, 'news_subscription', 'Подписка на новости', new_balance, conn)
 
         # Create/update subscription (indefinite - no expires_at)
         cur.execute("""
