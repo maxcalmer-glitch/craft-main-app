@@ -1295,11 +1295,9 @@ async function loadNews() {
         '<div style="font-size:20px;font-weight:700;color:#D4871C;margin-top:8px">Подписка на новости</div>' +
         '<div style="font-size:13px;color:#C9A84C;margin-top:4px">Получайте эксклюзивные новости прямо в Telegram</div></div>' +
         '<div class="stat-row"><span class="stat-label">Статус</span><span class="stat-val" style="color:' + (isSub ? '#4CAF50' : '#ff6b6b') + '">' + (isSub ? '✅ Активна' : '❌ Неактивна') + '</span></div>' +
-        (isSub ? '<div class="stat-row"><span class="stat-label">Действует до</span><span class="stat-val">' + expiresText + '</span></div>' : '') +
         '<div class="stat-row"><span class="stat-label">Стоимость</span><span class="stat-val">' + cost + ' 🍺 / день</span></div>' +
         '<div style="margin-top:16px">' +
         (isSub ?
-          '<button class="btn btn-primary" style="margin-bottom:8px" onclick="newsRenew()">🔄 Продлить (+24ч за ' + cost + ' 🍺)</button>' +
           '<button class="btn btn-danger" onclick="newsUnsubscribe()">❌ Отписаться</button>'
           :
           '<button class="btn btn-primary" onclick="newsSubscribe()">📰 Подписаться (' + cost + ' 🍺/день)</button>'
@@ -1322,14 +1320,6 @@ async function newsUnsubscribe() {
     else { toast('❌ ' + (r.error || 'Ошибка')); }
   } catch(e) { toast('❌ Ошибка соединения'); }
 }
-async function newsRenew() {
-  try {
-    const r = await api('/api/news/renew', {telegram_id: APP.tgId});
-    if (r.success) { APP.balance = r.new_balance; updateBalance(); toast('✅ Подписка продлена!'); loadNews(); }
-    else { toast('❌ ' + (r.error || 'Ошибка')); }
-  } catch(e) { toast('❌ Ошибка соединения'); }
-}
-
 /* ============ SHOP ============ */
 let shopAllItems = {};
 let shopCart = [];
