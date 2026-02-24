@@ -6,11 +6,29 @@ Modular architecture with security hardening.
 Entry point: creates Flask app, registers blueprints, initializes DB.
 """
 
+import os
 import logging
+import sentry_sdk
+from sentry_sdk.integrations.flask import FlaskIntegration
 from flask import Flask
 from flask_cors import CORS
 
 from .config import config
+
+# ===============================
+# Sentry Error Monitoring
+# ===============================
+SENTRY_DSN = os.environ.get('SENTRY_DSN', '')
+if SENTRY_DSN:
+    sentry_sdk.init(
+        dsn=SENTRY_DSN,
+        integrations=[FlaskIntegration()],
+        traces_sample_rate=0.1,
+        profiles_sample_rate=0.1,
+        environment=os.environ.get('VERCEL_ENV', 'production'),
+        release=config.VERSION if hasattr(config, 'VERSION') else '2.1',
+        send_default_pii=False,
+    )
 from .database import init_database
 from .security import add_security_headers, global_rate_limit_check
 from .frontend import frontend_bp
