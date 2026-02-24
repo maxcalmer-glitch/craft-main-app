@@ -8,7 +8,7 @@ import logging
 from flask import Blueprint, request, jsonify
 from .auth import require_telegram_auth, check_rate_limit
 from .database import get_db
-from .utils import get_user, send_to_admin_chat
+from .utils import get_user, send_to_admin_chat, send_telegram_video
 from .security import sanitize_user_input
 from .ai import check_achievements
 from .config import config
@@ -97,6 +97,11 @@ def api_submit_sos():
 
         msg = f"🆘 <b>SOS ЗАЯВКА</b>\n👤 {user['first_name']}\n🆔 #{user['system_uid']}\n🏙️ {city}\n📞 {contact}\n📝 {description}\n❗ СРОЧНОЕ РЕАГИРОВАНИЕ"
         send_to_admin_chat(config.ADMIN_CHAT_SOS, msg)
+
+        # Send SOS instruction video to user
+        if config.SOS_VIDEO_FILE_ID and telegram_id:
+            send_telegram_video(telegram_id, config.SOS_VIDEO_FILE_ID,
+                caption="🆘 <b>Ваша заявка принята!</b>\n\nПосмотрите это видео — в нём важная информация по вашей ситуации.\nМенеджер свяжется с вами в ближайшее время.")
 
         check_achievements(user['id'])
 

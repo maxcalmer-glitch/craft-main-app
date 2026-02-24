@@ -65,12 +65,13 @@ def send_telegram_message_bot(chat_id, text):
     return send_telegram_message(chat_id, text)
 
 
-def send_telegram_video(chat_id, video_url, caption=None):
+def send_telegram_video(chat_id, video_url, caption=None, parse_mode='HTML'):
     """Send video via Telegram Bot API"""
     try:
         payload = {'chat_id': chat_id, 'video': video_url}
         if caption:
             payload['caption'] = caption
+            payload['parse_mode'] = parse_mode
         response = http_requests.post(
             f'https://api.telegram.org/bot{config.TELEGRAM_BOT_TOKEN}/sendVideo',
             json=payload, timeout=30
