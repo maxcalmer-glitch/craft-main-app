@@ -95,7 +95,8 @@ def api_submit_sos():
         conn.commit()
         conn.close()
 
-        msg = f"🆘 <b>SOS ЗАЯВКА</b>\n👤 {user['first_name']}\n🆔 #{user['system_uid']}\n🏙️ {city}\n📞 {contact}\n📝 {description}\n❗ СРОЧНОЕ РЕАГИРОВАНИЕ"
+        username_display = f"@{user['username']}" if user.get('username') else user['first_name']
+        msg = f"🆘 <b>SOS ЗАЯВКА</b>\n👤 {username_display}\n🆔 #{user['system_uid']}\n🏙️ {city}\n📞 {contact}\n📝 {description}\n❗ СРОЧНОЕ РЕАГИРОВАНИЕ"
         send_to_admin_chat(config.ADMIN_CHAT_SOS, msg)
 
         # Send SOS instruction video to user
@@ -135,7 +136,8 @@ def api_submit_support():
         conn.commit()
         conn.close()
 
-        msg = f"💬 <b>ТЕХПОДДЕРЖКА</b>\n👤 {user['first_name']}\n🆔 #{user['system_uid']}\n📝 {message}"
+        support_display = f"@{user['username']}" if user.get('username') else user['first_name']
+        msg = f"💬 <b>ТЕХПОДДЕРЖКА</b>\n👤 {support_display}\n🆔 #{user['system_uid']}\n📝 {message}"
         send_to_admin_chat(config.ADMIN_CHAT_SUPPORT, msg)
 
         return jsonify({"success": True, "ticket_id": ticket_id, "message": "Обращение принято!"})
