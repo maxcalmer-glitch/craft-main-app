@@ -978,7 +978,15 @@ async function sendChat() {
 function addChatMsg(text, type) {
   const el = document.createElement('div');
   el.className = 'chat-msg ' + type;
-  el.textContent = text;
+  if (type === 'bot') {
+    let html = text.replace(/\n/g, '<br>');
+    html = html.replace(/\*\*(.*?)\*\*/g, '<b>$1</b>');
+    html = html.replace(/^▸ /gm, '▸ ');
+    html = html.replace(/^- /gm, '▸ ');
+    el.innerHTML = html;
+  } else {
+    el.textContent = text;
+  }
   const container = document.getElementById('chatMessages');
   container.appendChild(el);
   container.scrollTop = container.scrollHeight;
