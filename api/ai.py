@@ -198,9 +198,9 @@ def get_ai_response(user_id, message, telegram_id):
         # === KNOWLEDGE BASE + LEARNED FACTS ===
         knowledge_text = ""
         try:
-            cur.execute("SELECT content FROM ai_knowledge_base ORDER BY priority DESC LIMIT 10")
+            cur.execute("SELECT title, content FROM ai_knowledge_base WHERE is_active = TRUE ORDER BY priority DESC LIMIT 30")
             kb_rows = cur.fetchall()
-            knowledge_text = "\n".join([r['content'] for r in kb_rows]) if kb_rows else "База знаний пока пуста."
+            knowledge_text = "\n---\n".join([f"[{r['title']}]\n{r['content']}" for r in kb_rows]) if kb_rows else "База знаний пока пуста."
         except:
             knowledge_text = "База знаний недоступна."
 
