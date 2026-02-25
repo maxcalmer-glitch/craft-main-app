@@ -491,7 +491,9 @@ select.form-input{appearance:none;-webkit-appearance:none}
     <div class="content fade-in">
       <div class="card">
         <div class="card-title">🛎️ Напишите нам</div>
-        <div class="card-text" style="margin-bottom:16px">Опишите вашу проблему или вопрос</div>
+        <div class="card-text" style="margin-bottom:12px">Опишите вашу проблему или вопрос</div>
+        <div style="padding:12px;margin-bottom:16px;border-radius:10px;background:rgba(212,135,28,0.08);border:1px solid rgba(212,135,28,0.15);font-size:13px;color:#C9A84C;line-height:1.6">
+        💡 <b>Есть идея или предложение?</b><br>Мы всегда открыты к улучшениям! Напишите что хотели бы видеть в CRAFT — новые функции, уроки, инструменты. Каждое сообщение читается лично командой.<br><br>📩 Техподдержка · 💡 Идеи · 🐛 Баг-репорты</div>
         <div class="form-group">
           <textarea class="form-textarea" id="supportMsg" placeholder="Ваше сообщение..."></textarea>
         </div>
