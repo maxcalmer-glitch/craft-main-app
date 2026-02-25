@@ -140,7 +140,7 @@ def api_referral_stats():
         conn.close()
         return jsonify({"success": True, "stats": {"level1_count": l1, "level2_count": l2, "total_earned": total, "recent": recent}})
     except Exception as e:
-        return jsonify({"success": False, "error": str(e)}), 500
+        return jsonify({"success": False, "error": "Internal server error"}), 500
 
 
 @user_bp.route('/api/balance/history', methods=['GET'])
@@ -168,7 +168,7 @@ def api_balance_history():
                 h['created_at'] = h['created_at'].isoformat()
         return jsonify({"success": True, "history": history})
     except Exception as e:
-        return jsonify({"success": False, "error": str(e)}), 500
+        return jsonify({"success": False, "error": "Internal server error"}), 500
 
 
 @user_bp.route('/api/check-subscription', methods=['POST'])
@@ -231,7 +231,7 @@ def api_news_subscribe():
         return jsonify({"success": True, "new_balance": new_balance})
     except Exception as e:
         logger.error(f"News subscribe error: {e}")
-        return jsonify({"success": False, "error": str(e)}), 500
+        return jsonify({"success": False, "error": "Internal server error"}), 500
 
 
 @user_bp.route('/api/news/unsubscribe', methods=['POST'])
@@ -254,7 +254,7 @@ def api_news_unsubscribe():
 
         return jsonify({"success": True})
     except Exception as e:
-        return jsonify({"success": False, "error": str(e)}), 500
+        return jsonify({"success": False, "error": "Internal server error"}), 500
 
 
 @user_bp.route('/api/news/status', methods=['GET'])
@@ -281,7 +281,7 @@ def api_news_status():
 
         return jsonify({"success": True, "is_subscribed": False, "daily_cost": daily_cost})
     except Exception as e:
-        return jsonify({"success": False, "error": str(e)}), 500
+        return jsonify({"success": False, "error": "Internal server error"}), 500
 
 
 

@@ -4,6 +4,7 @@
 """
 
 import os
+import hmac
 import logging
 import requests as http_requests
 from flask import Blueprint, request, jsonify
@@ -14,6 +15,9 @@ from .config import config
 
 logger = logging.getLogger(__name__)
 bot_bp = Blueprint('bot', __name__)
+
+# H-3: Webhook secret for Telegram verification
+WEBHOOK_SECRET = os.environ.get('WEBHOOK_SECRET', 'craft-bot-webhook-2026')
 
 
 def handle_bot_start_command(chat_id, user_id, text, username=None, first_name=None):
@@ -156,6 +160,11 @@ def bot_webhook():
     if request.method == 'GET':
         return jsonify({'status': 'CRAFT Bot Webhook', 'version': 'v6.2', 'ready': True, 'endpoint': '/api/bot/webhook'})
 
+    # H-3: Verify Telegram webhook secret token
+    token = request.headers.get('X-Telegram-Bot-Api-Secret-Token', '')
+    if not hmac.compare_digest(token.encode(), WEBHOOK_SECRET.encode()):
+        return jsonify({'ok': False}), 403
+
     try:
         update = request.get_json()
         if 'message' in update:
@@ -198,7 +207,7 @@ def bot_webhook():
         return jsonify({'ok': True})
     except Exception as e:
         logger.error(f"Webhook error: {e}")
-        return jsonify({'ok': False, 'error': str(e)}), 500
+        return jsonify({'ok': False, 'error': 'Internal server error'}), 500
 
 
 @bot_bp.route('/api/bot/set-webhook', methods=['GET'])
@@ -207,7 +216,7 @@ def set_webhook():
     webhook_url = f"{config.APP_URL}/api/bot/webhook"
     resp = http_requests.post(
         f"https://api.telegram.org/bot{config.TELEGRAM_BOT_TOKEN}/setWebhook",
-        json={"url": webhook_url, "allowed_updates": ["message"]},
+        json={"url": webhook_url, "allowed_updates": ["message"], "secret_token": WEBHOOK_SECRET},
         timeout=10
     )
     return jsonify(resp.json())

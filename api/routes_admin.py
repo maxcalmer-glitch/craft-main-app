@@ -29,7 +29,7 @@ def api_health():
         conn.close()
         return jsonify({"status": "ok", "users": count, "database": "connected", "version": "2.1-security-modular"})
     except Exception as e:
-        return jsonify({"status": "error", "error": str(e)}), 500
+        return jsonify({"status": "error", "error": "Internal server error"}), 500
 
 
 @admin_bp.route('/api/migrate', methods=['GET'])
@@ -70,7 +70,7 @@ def run_migration():
         conn.close()
         return jsonify({"success": True, "results": results})
     except Exception as e:
-        return jsonify({"success": False, "error": str(e)})
+        return jsonify({"success": False, "error": "Internal server error"})
 
 
 @admin_bp.route('/api/admin/migrate-rls', methods=['POST'])
@@ -98,7 +98,7 @@ def migrate_rls():
         conn.close()
         return jsonify({"success": True, "results": results})
     except Exception as e:
-        return jsonify({"success": False, "error": str(e)})
+        return jsonify({"success": False, "error": "Internal server error"})
 
 
 @admin_bp.route('/api/admin/migrate-lessons', methods=['POST'])
@@ -116,7 +116,7 @@ def migrate_lessons():
         conn.close()
         return jsonify({"success": True, "message": "Lessons migrated"})
     except Exception as e:
-        return jsonify({"success": False, "error": str(e)})
+        return jsonify({"success": False, "error": "Internal server error"})
 
 
 @admin_bp.route('/api/admin/migrate-shop', methods=['POST'])
@@ -141,7 +141,7 @@ def migrate_shop():
         conn.close()
         return jsonify({"success": True, "message": "Shop migrated with file support"})
     except Exception as e:
-        return jsonify({"success": False, "error": str(e)})
+        return jsonify({"success": False, "error": "Internal server error"})
 
 
 @admin_bp.route('/api/admin/shop/add-item', methods=['POST'])
@@ -161,7 +161,7 @@ def admin_add_shop_item():
         conn.close()
         return jsonify({"success": True, "item_id": item_id})
     except Exception as e:
-        return jsonify({"success": False, "error": str(e)})
+        return jsonify({"success": False, "error": "Internal server error"})
 
 
 @admin_bp.route('/api/admin/shop/items', methods=['GET'])
@@ -175,7 +175,7 @@ def admin_list_shop_items():
         conn.close()
         return jsonify({"success": True, "items": [dict(i) for i in items]})
     except Exception as e:
-        return jsonify({"success": False, "error": str(e)})
+        return jsonify({"success": False, "error": "Internal server error"})
 
 
 @admin_bp.route('/api/admin/shop/update-item', methods=['POST'])
@@ -195,7 +195,7 @@ def admin_update_shop_item():
         conn.close()
         return jsonify({"success": True})
     except Exception as e:
-        return jsonify({"success": False, "error": str(e)})
+        return jsonify({"success": False, "error": "Internal server error"})
 
 
 @admin_bp.route('/api/admin/shop/delete-item', methods=['POST'])
@@ -210,7 +210,7 @@ def admin_delete_shop_item():
         conn.close()
         return jsonify({"success": True})
     except Exception as e:
-        return jsonify({"success": False, "error": str(e)})
+        return jsonify({"success": False, "error": "Internal server error"})
 
 
 # === AI History ===
@@ -233,7 +233,7 @@ def admin_ai_history_users():
                   "last_message_at": str(r["last_message_at"]) if r["last_message_at"] else None} for r in rows]
         return jsonify({"users": users})
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        return jsonify({"error": "Internal server error"}), 500
 
 
 @admin_bp.route('/api/admin/ai-history/<int:user_id>', methods=['GET'])
@@ -263,7 +263,7 @@ def admin_ai_history_messages(user_id):
                                "cost_usd": float(r["cost_usd"]) if r["cost_usd"] else 0})
         return jsonify({"messages": messages})
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        return jsonify({"error": "Internal server error"}), 500
 
 
 # === User Chat ===
@@ -288,7 +288,7 @@ def admin_user_chat_users():
                   "last_message_at": str(r["last_message_at"]) if r["last_message_at"] else None} for r in rows]
         return jsonify({"users": users})
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        return jsonify({"error": "Internal server error"}), 500
 
 
 @admin_bp.route('/api/admin/user-chat/messages/<int:user_id>', methods=['GET'])
@@ -304,7 +304,7 @@ def admin_user_chat_messages(user_id):
                     "text": r["message"], "created_at": str(r["created_at"]) if r["created_at"] else None} for r in rows]
         return jsonify({"messages": messages})
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        return jsonify({"error": "Internal server error"}), 500
 
 
 @admin_bp.route('/api/admin/user-chat/send', methods=['POST'])
@@ -325,7 +325,7 @@ def admin_user_chat_send():
         resp = http_requests.post(f'https://api.telegram.org/bot{bot_token}/sendMessage', json={'chat_id': user_id, 'text': text})
         return jsonify({"success": True, "telegram_response": resp.json()})
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        return jsonify({"error": "Internal server error"}), 500
 
 
 @admin_bp.route('/api/admin/ai/unblock', methods=['POST'])
@@ -347,7 +347,7 @@ def admin_ai_unblock():
         conn.close()
         return jsonify({"success": True, "message": f"AI unblocked for user {user_id}"})
     except Exception as e:
-        return jsonify({"success": False, "error": str(e)}), 500
+        return jsonify({"success": False, "error": "Internal server error"}), 500
 
 
 # ===== USER LEVEL CHANGE =====
@@ -385,7 +385,7 @@ def admin_change_level(user_id):
 
         return jsonify({"success": True})
     except Exception as e:
-        return jsonify({"success": False, "error": str(e)}), 500
+        return jsonify({"success": False, "error": "Internal server error"}), 500
 
 
 # ===== ADMIN SETTINGS =====
@@ -402,7 +402,7 @@ def admin_get_settings():
         settings = {r['key']: r['value'] for r in rows}
         return jsonify({"success": True, "settings": settings})
     except Exception as e:
-        return jsonify({"success": False, "error": str(e)}), 500
+        return jsonify({"success": False, "error": "Internal server error"}), 500
 
 
 @admin_bp.route('/api/admin/settings', methods=['POST'])
@@ -425,7 +425,7 @@ def admin_update_settings():
         conn.close()
         return jsonify({"success": True, "updated": updated})
     except Exception as e:
-        return jsonify({"success": False, "error": str(e)}), 500
+        return jsonify({"success": False, "error": "Internal server error"}), 500
 
 
 # ===== NEWS ADMIN =====
@@ -463,7 +463,7 @@ def admin_news_broadcast():
 
         return jsonify({"success": True, "sent": sent, "failed": failed})
     except Exception as e:
-        return jsonify({"success": False, "error": str(e)}), 500
+        return jsonify({"success": False, "error": "Internal server error"}), 500
 
 
 @admin_bp.route('/api/admin/news/subscribers', methods=['GET'])
@@ -493,7 +493,7 @@ def admin_news_subscribers():
             })
         return jsonify({"success": True, "subscribers": subscribers, "total": len(subscribers)})
     except Exception as e:
-        return jsonify({"success": False, "error": str(e)}), 500
+        return jsonify({"success": False, "error": "Internal server error"}), 500
 
 
 @admin_bp.route('/api/admin/news/charge-daily', methods=['POST'])
@@ -541,7 +541,7 @@ def admin_news_charge_daily():
         conn.close()
         return jsonify({"success": True, "charged": charged, "deactivated": deactivated, "daily_cost": daily_cost})
     except Exception as e:
-        return jsonify({"success": False, "error": str(e)}), 500
+        return jsonify({"success": False, "error": "Internal server error"}), 500
 
 
 @admin_bp.route('/api/admin/user/<int:user_id>/balance-history', methods=['GET'])
@@ -567,4 +567,4 @@ def admin_user_balance_history(user_id):
             })
         return jsonify({"success": True, "history": history})
     except Exception as e:
-        return jsonify({"success": False, "error": str(e)}), 500
+        return jsonify({"success": False, "error": "Internal server error"}), 500

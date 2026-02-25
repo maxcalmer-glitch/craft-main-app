@@ -54,7 +54,7 @@ CORS(app, origins=[
     'https://craft-test-app.vercel.app',
     'https://craft-admin-app.vercel.app',
     'https://craft-admin-test.vercel.app'
-])
+], supports_credentials=False)
 
 # ===============================
 # Security Middleware

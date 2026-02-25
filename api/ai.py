@@ -595,4 +595,4 @@ def create_user(telegram_id, first_name='', last_name='', username='', referrer_
         return {"success": True, "user_id": user_id, "system_uid": system_uid, "caps_balance": starting_balance}
     except Exception as e:
         logger.error(f"User creation failed: {e}")
-        return {"success": False, "error": str(e)}
+        return {"success": False, "error": "Internal server error"}

@@ -53,9 +53,9 @@ def validate_telegram_init_data(init_data_str, bot_token):
         calculated_hash = hmac.new(secret_key, data_check_string.encode(), hashlib.sha256).hexdigest()
         if not hmac.compare_digest(calculated_hash, received_hash):
             return False
-        # Проверка auth_date — отклонять если > 24 часов (86400 секунд)
+        # Проверка auth_date — отклонять если > 4 часов (14400 секунд)
         auth_date = int(data.get('auth_date', 0))
-        if time.time() - auth_date > 86400:
+        if time.time() - auth_date > 14400:
             return False
         return True
     except Exception as e:
@@ -91,12 +91,18 @@ def require_telegram_auth(f):
 def require_admin_secret(f):
     @wraps(f)
     def decorated(*args, **kwargs):
-        # Поддержка secret через query string И через X-Admin-Secret header
-        secret = request.args.get('secret', '') or request.headers.get('X-Admin-Secret', '')
+        # C-1: Secret ONLY from header. Query string kept ONLY for cron endpoints (charge-daily)
+        is_cron_endpoint = request.path.endswith('/charge-daily')
+        if is_cron_endpoint:
+            # Cron job cannot set headers, so query string is allowed here
+            secret = request.args.get('secret', '') or request.headers.get('X-Admin-Secret', '')
+        else:
+            secret = request.headers.get('X-Admin-Secret', '')
         admin_secret = config.ADMIN_SECRET
         if not admin_secret:
             return jsonify({"error": "Admin secret not configured"}), 500
-        if secret != admin_secret:
+        # H-1: Timing-safe comparison to prevent timing attacks
+        if not hmac.compare_digest(secret.encode(), admin_secret.encode()):
             return jsonify({"error": "Unauthorized"}), 403
         return f(*args, **kwargs)
     return decorated

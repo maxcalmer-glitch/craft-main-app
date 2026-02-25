@@ -31,7 +31,7 @@ def api_shop_items():
             grouped[cat].append(item)
         return jsonify({"success": True, "items": grouped})
     except Exception as e:
-        return jsonify({"success": False, "error": str(e)}), 500
+        return jsonify({"success": False, "error": "Internal server error"}), 500
 
 
 @shop_bp.route('/api/shop/cart/add', methods=['POST'])
@@ -56,7 +56,7 @@ def api_shop_cart_add():
         conn.close()
         return jsonify({"success": True})
     except Exception as e:
-        return jsonify({"success": False, "error": str(e)}), 500
+        return jsonify({"success": False, "error": "Internal server error"}), 500
 
 
 @shop_bp.route('/api/shop/cart/remove', methods=['POST'])
@@ -77,7 +77,7 @@ def api_shop_cart_remove():
         conn.close()
         return jsonify({"success": True})
     except Exception as e:
-        return jsonify({"success": False, "error": str(e)}), 500
+        return jsonify({"success": False, "error": "Internal server error"}), 500
 
 
 @shop_bp.route('/api/shop/cart', methods=['GET'])
@@ -99,7 +99,7 @@ def api_shop_cart():
         conn.close()
         return jsonify({"success": True, "items": items, "total": total})
     except Exception as e:
-        return jsonify({"success": False, "error": str(e)}), 500
+        return jsonify({"success": False, "error": "Internal server error"}), 500
 
 
 @shop_bp.route('/api/shop/checkout', methods=['POST'])
@@ -198,7 +198,7 @@ def api_shop_checkout():
             pass
         return jsonify({"success": True, "total_spent": total, "new_balance": user['caps_balance'] - total})
     except Exception as e:
-        return jsonify({"success": False, "error": str(e)}), 500
+        return jsonify({"success": False, "error": "Internal server error"}), 500
 
 
 @shop_bp.route('/api/shop/purchases', methods=['GET'])
@@ -219,4 +219,4 @@ def api_shop_purchases():
         conn.close()
         return jsonify({"success": True, "purchases": purchases})
     except Exception as e:
-        return jsonify({"success": False, "error": str(e)}), 500
+        return jsonify({"success": False, "error": "Internal server error"}), 500

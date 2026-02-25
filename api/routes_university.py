@@ -112,4 +112,4 @@ def api_achievements_all():
         conn.close()
         return jsonify({"success": True, "achievements": achievements})
     except Exception as e:
-        return jsonify({"success": False, "error": str(e)}), 500
+        return jsonify({"success": False, "error": "Internal server error"}), 500
