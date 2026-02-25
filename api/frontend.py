@@ -1028,7 +1028,7 @@ function showExamQuestion() {
   let html = '<div class="card exam-slide">' +
     '<div class="exam-progress-bar"><div class="exam-progress-fill" style="width:' + pct + '%"></div></div>' +
     '<div class="exam-question-num">Вопрос ' + num + ' из ' + total + '</div>' +
-    '<div class="quiz-question">' + q.q + '</div>';
+    '<div class="quiz-question">' + (q.q || q.question) + '</div>';
   q.options.forEach(function(opt, oi) {
     html += '<div class="quiz-option" id="eq' + s.current + 'o' + oi + '" onclick="examAnswer(' + oi + ',' + q.correct + ')">' + opt + '</div>';
   });
