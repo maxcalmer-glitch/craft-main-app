@@ -1005,7 +1005,7 @@ function openLesson(idx) {
   let quiz = [];
   try { quiz = JSON.parse(l.exam_questions || '[]'); } catch(e) {}
   let html = '<div class="card"><div style="display:flex;align-items:center;gap:10px;margin-bottom:14px"><button class="back-btn" onclick="loadUniversity()">←</button><div class="card-title" style="margin:0">📖 ' + l.title + '</div></div>' +
-    '<div class="lesson-content">' + l.content + '</div></div>';
+    '<div class="lesson-content">' + l.content.replace(/\n/g, '<br>') + '</div></div>';
   if (quiz.length > 0) {
     html += '<div class="card" style="text-align:center"><button class="exam-start-btn" onclick="startExam(' + idx + ')">🎓 Начать экзамен</button></div>';
   }
