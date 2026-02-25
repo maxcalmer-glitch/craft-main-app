@@ -612,13 +612,23 @@ async function startApp() {
     }
   } catch(e) { console.error('Init failed', e); }
   
-  // 2. Channel check FULLY DISABLED for test
-  APP.channelOk = true;
-  try { hide('gateLoading'); } catch(e) {}
-  try { showCaptcha(); } catch(e) { 
-    // If captcha fails, go straight to main
-    try { hide('gateCaptcha'); } catch(e2) {}
-    showScreen('main');
+  // 2. Channel subscription check
+  try {
+    const chRes = await api('/api/channel/check', { telegram_id: APP.tgId });
+    if (chRes.subscribed) {
+      APP.channelOk = true;
+      try { hide('gateLoading'); } catch(e) {}
+      showCaptcha();
+    } else {
+      APP.channelOk = false;
+      try { hide('gateLoading'); } catch(e) {}
+      show('gateChannel');
+    }
+  } catch(e) {
+    // If check fails, let user through
+    APP.channelOk = true;
+    try { hide('gateLoading'); } catch(e2) {}
+    showCaptcha();
   }
 }
 
