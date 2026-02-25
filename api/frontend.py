@@ -1303,8 +1303,15 @@ async function loadNews() {
       el.innerHTML = '<div class="card">' +
         '<div style="text-align:center;margin-bottom:16px">' +
         '<div style="font-size:48px">📰</div>' +
-        '<div style="font-size:20px;font-weight:700;color:#D4871C;margin-top:8px">Подписка на новости</div>' +
-        '<div style="font-size:13px;color:#C9A84C;margin-top:4px">Получайте эксклюзивные новости прямо в Telegram</div></div>' +
+        '<div style="font-size:20px;font-weight:700;color:#D4871C;margin-top:8px">CRAFT Daily</div>' +
+        '<div style="font-size:13px;color:#C9A84C;margin-top:4px">Ежедневный дайджест рынка процессинга</div></div>' +
+        '<div style="padding:12px;margin-bottom:12px;border-radius:10px;background:rgba(212,135,28,0.08);border:1px solid rgba(212,135,28,0.15)">' +
+        '<div style="font-size:13px;color:#C9A84C;line-height:1.6">' +
+        '📊 <b>Рынок и ставки</b> — актуальные % и тренды<br>' +
+        '🛠 <b>Методы</b> — рабочие схемы и мануалы<br>' +
+        '⚠️ <b>Безопасность</b> — блокировки, ФЗ, кейсы<br>' +
+        '💡 <b>Полезное</b> — лайфхаки и инструменты<br><br>' +
+        'Сводка из <b>50+ профильных ТГ-каналов</b> каждое утро в 10:00 МСК прямо в личку от бота.</div></div>' +
         '<div class="stat-row"><span class="stat-label">Статус</span><span class="stat-val" style="color:' + (isSub ? '#4CAF50' : '#ff6b6b') + '">' + (isSub ? '✅ Активна' : '❌ Неактивна') + '</span></div>' +
         '<div class="stat-row"><span class="stat-label">Стоимость</span><span class="stat-val">' + (APP.userLevel === 'vip' ? '👑 Бесплатно (VIP)' : cost + ' 🍺 / день') + '</span></div>' +
         '<div style="margin-top:16px">' +
