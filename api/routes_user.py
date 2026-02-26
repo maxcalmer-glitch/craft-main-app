@@ -51,7 +51,7 @@ def api_init():
             return jsonify({
                 "success": True, "system_uid": user['system_uid'],
                 "caps_balance": user['caps_balance'],
-                "total_referrals": user.get('total_referrals_count', 0), "exists": True,
+                "total_referrals": user.get('total_referrals', 0) or 0, "exists": True,
                 "is_news_subscriber": is_news_sub,
                 "user_level": user.get('user_level', 'basic')
             })

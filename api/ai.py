@@ -536,7 +536,7 @@ def create_user(telegram_id, first_name='', last_name='', username='', referrer_
         # Process referral rewards
         if referrer_id and referrer:
             cur.execute("INSERT INTO referrals (referrer_id, referred_id, level, commission_percent, caps_earned) VALUES (%s, %s, 1, 5.00, 30)", (referrer_id, user_id))
-            cur.execute("UPDATE users SET caps_balance = caps_balance + 30, total_earned_caps = total_earned_caps + 30 WHERE id = %s", (referrer_id,))
+            cur.execute("UPDATE users SET caps_balance = caps_balance + 30, total_earned_caps = total_earned_caps + 30, total_referrals = COALESCE(total_referrals, 0) + 1 WHERE id = %s", (referrer_id,))
             cur.execute("SELECT caps_balance FROM users WHERE id = %s", (referrer_id,))
             ref_bal = cur.fetchone()
             log_balance_operation(referrer_id, 30, 'referral_bonus', f'Реферал 1-го уровня (#{user_id})', ref_bal['caps_balance'] if ref_bal else 0, conn)
