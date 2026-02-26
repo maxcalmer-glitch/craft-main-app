@@ -206,6 +206,17 @@ select.form-input{appearance:none;-webkit-appearance:none}
 <!-- GATE: Channel Check DISABLED for test -->
 
 <!-- ===== GATE: Captcha ===== -->
+<div class="gate-overlay" id="gateChannel" style="display:none">
+  <div class="gate-icon">📢</div>
+  <div class="gate-title">Подписка на канал</div>
+  <div class="gate-text">Для использования приложения необходимо подписаться на наш канал</div>
+  <div style="margin-top:20px">
+    <button onclick="openChannelLink()" style="background:linear-gradient(135deg,#D4871C,#F4C430);color:#1A0E0A;border:none;padding:14px 28px;border-radius:12px;font-weight:bold;font-size:15px;cursor:pointer;width:100%;margin-bottom:12px">📢 Подписаться на канал</button>
+    <button onclick="recheckSubscription()" style="background:rgba(212,135,28,0.15);color:#F4C430;border:1px solid rgba(212,135,28,0.3);padding:12px 28px;border-radius:12px;font-weight:bold;font-size:14px;cursor:pointer;width:100%">✅ Я подписался</button>
+  </div>
+  <div id="channelError" style="color:#E53935;font-size:13px;margin-top:12px;display:none"></div>
+</div>
+
 <div class="gate-overlay" id="gateCaptcha" style="display:none">
   <div class="gate-icon">🔒</div>
   <div class="gate-title">Проверка</div>
