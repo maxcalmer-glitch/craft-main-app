@@ -616,7 +616,7 @@ async function startApp() {
   
   // 2. Channel subscription check
   try {
-    const chRes = await api('/api/channel/check', { telegram_id: APP.tgId });
+    const chRes = await api('/api/check-subscription', { telegram_id: APP.tgId });
     if (chRes.subscribed) {
       APP.channelOk = true;
       try { hide('gateLoading'); } catch(e) {}
